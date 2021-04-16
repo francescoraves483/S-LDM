@@ -6,8 +6,8 @@ OBJ_DIR=obj
 SRC_VEHVIS_DIR=vehicle-visualizer/src
 OBJ_VEHVIS_DIR=obj/vehicle-visualizer
 
-SRC=$(wildcard $(SRC_DIR)/*.c)
-SRC_VEHVIS=$(wildcard $(SRC_VEHVIS_DIR)/*.c)
+SRC=$(wildcard $(SRC_DIR)/*.cpp)
+SRC_VEHVIS=$(wildcard $(SRC_VEHVIS_DIR)/*.cc)
 
 OBJ=$(SRC:$(SRC_DIR)/%.c=$(OBJ_DIR)/%.o)
 OBJ_VEHVIS=$(SRC_VEHVIS:$(SRC_VEHVIS_DIR)/%.c=$(OBJ_VEHVIS_DIR)/%.o)
@@ -15,7 +15,7 @@ OBJ_VEHVIS=$(SRC_VEHVIS:$(SRC_VEHVIS_DIR)/%.c=$(OBJ_VEHVIS_DIR)/%.o)
 OBJ_CC=$(OBJ)
 OBJ_CC+=$(OBJ_VEHVIS)
 
-CFLAGS += -Wall -O3 -Iinclude -Ivehicle-visualizer/include
+CFLAGS += -Wall -O3 -Iinclude -Ivehicle-visualizer/include -std=c++17
 LDLIBS += -lcpprest -lpthread -lcrypto -lm
 
 .PHONY: all clean
@@ -25,20 +25,20 @@ all: compilePC
 compilePC: CXX = g++
 compilePC: CC = gcc
 	
-compilePCdebug: CFLAGS += -g
+compilePCdebug: CXXFLAGS += -g
 compilePCdebug: compilePC
 
 compilePC compilePCdebug: $(EXECNAME)
 
 # Standard targets
 $(EXECNAME): $(OBJ_CC)
-	$(CXX) $(LDFLAGS) $^ $(LDLIBS) -o $@
+	$(CXX) $(LDFLAGS) $^ $(LDLIBS) $(CFLAGS) -o $@
 
-$(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
 	@ mkdir -p $(OBJ_DIR)
 	$(CXX) $(CFLAGS) -c $< -o $@
 
-$(OBJ_VEHVIS_DIR)/%.o: $(SRC_VEHVIS_DIR)/%.c
+$(OBJ_VEHVIS_DIR)/%.o: $(SRC_VEHVIS_DIR)/%.cc
 	@ mkdir -p $(OBJ_VEHVIS_DIR)
 	$(CXX) $(CFLAGS) -c $< -o $@
 

@@ -1,9 +1,8 @@
-/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 #ifndef VEHICLE_VISUALIZER_H
 #define VEHICLE_VISUALIZER_H
 
 #define VIS_HEADING_INVALID 361
-#define DEFAULT_NODEJS_SERVER_PATH "./src/vehicle-visualizer/js/server.js"
+#define DEFAULT_NODEJS_SERVER_PATH "./js/server.js"
 
 #include <string>
 

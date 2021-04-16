@@ -1,6 +1,5 @@
 #include "LDMmap.h"
 #include <cmath>
-#include <iostream> // [TBR]
 
 #define DEFINE_KEYS(k_up,k_low,stationID) \
 		uint32_t k_low = stationID & 0x0000FFFF; \
@@ -66,7 +65,7 @@ namespace ldmmap
 			}
 		}
 
-		std::cout << "Updating vehicle: " << newVehicleData.stationID << std::endl;
+		// std::cout << "Updating vehicle: " << newVehicleData.stationID << std::endl;
 		m_ldmmap[key_upper].second[key_lower].phData->insert(newVehicleData);
 
 		return retval;

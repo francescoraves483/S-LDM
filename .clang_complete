@@ -1,0 +1,6 @@
+-pthread
+-m
+-cpprest
+-qpid-proton
+-Iinclude
+-Ivehicle-visualizer/include

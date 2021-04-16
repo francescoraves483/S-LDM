@@ -51,7 +51,7 @@ var circleIcon = L.icon({
 // Receive the first message from the server
 socket.on('message', (msg) => {
 	if (msg == null) {
-		document.getElementById('statusid').innerHTML = '<p>Waiting for a connection from ms-van3t</p>';
+		document.getElementById('statusid').innerHTML = '<p>Waiting for a connection from the S-LDM</p>';
 	} else {
 		let msg_fields = msg.split(",");
 

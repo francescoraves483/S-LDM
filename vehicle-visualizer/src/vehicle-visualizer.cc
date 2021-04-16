@@ -1,10 +1,10 @@
-/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netinet/udp.h>
 #include <arpa/inet.h>
 #include <unistd.h>
+#include <iostream>
+#include <sstream>
 #include "vehicle-visualizer.h"
 
 vehicleVisualizer::vehicleVisualizer()
