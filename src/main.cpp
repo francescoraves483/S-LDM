@@ -3,6 +3,7 @@
 
 #include "LDMmap.h"
 #include "vehicle-visualizer.h"
+#include "QuadKeyTS.h"
 
 int main(int argc, char **argv) {
 	// Create a new DB object
@@ -11,6 +12,9 @@ int main(int argc, char **argv) {
 
 	// Create a new vehicle visualizer object
 	vehicleVisualizer vehicleVisObj;
+
+	// Quadkey calculation object
+	QuadKeys::QuadKeyTS quadcalc;
 
 	vehicleVisObj.startServer();
 	vehicleVisObj.connectToServer ();
@@ -30,6 +34,9 @@ int main(int argc, char **argv) {
 	vehicleVisObj.sendObjectUpdate("veh1",45.562119, 8.055311);
 	sleep(1);
 	vehicleVisObj.sendObjectUpdate("veh1",45.562109, 8.055311);
+
+	// Sample quadkey calculation
+	std::cout << "The quadkey for (45.562109,8.055311) with detail level = 15 is: " << quadcalc.LatLonToQuadKey(45.562109,8.055311,15) << std::endl;
 
 	std::cout << "Press a button to terminate this sample main()..." << std::endl;
 	std::getchar();
