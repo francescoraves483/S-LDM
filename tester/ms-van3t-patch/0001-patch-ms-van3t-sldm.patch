@@ -1,0 +1,76 @@
+diff --git a/src/automotive/model/GeoNet/geonet.cc b/src/automotive/model/GeoNet/geonet.cc
+index 2d1f49e..36bfa9d 100644
+--- a/src/automotive/model/GeoNet/geonet.cc
++++ b/src/automotive/model/GeoNet/geonet.cc
+@@ -23,6 +23,7 @@
+ #include "ns3/log.h"
+ #include "ns3/network-module.h"
+ #include "ns3/gn-utils.h"
++#include "metadata-header.h"
+ #include <cmath>
+ #define SN_MAX 65536
+ 
+@@ -334,6 +335,14 @@ namespace ns3 {
+     dataRequest.data->AddHeader (commonHeader);
+     dataRequest.data->AddHeader (basicHeader);
+ 
++    /* [TBR] EXPERIMENTAL, FOR S-LDM DEVELOPMENT ONLY */
++    GNMetadataHeader Gnmetadataheader;
++    Gnmetadataheader.SetLat (longPV.latitude);
++    Gnmetadataheader.SetLon (longPV.longitude);
++    Gnmetadataheader.SetStationID ((uint64_t)m_station_id);
++    dataRequest.data->AddHeader (Gnmetadataheader);
++    /* ---------------------------------------------- */
++
+     //2)Security setting -not implemeted yet-
+     //3)If not suitable neighbour exist in the LocT and the SCF for the traffic class is set:
+ 
+@@ -383,6 +392,14 @@ namespace ns3 {
+ 
+     dataRequest.data->AddHeader (commonHeader);
+     dataRequest.data->AddHeader (basicHeader);
++
++    /* [TBR] EXPERIMENTAL, FOR S-LDM DEVELOPMENT ONLY */
++    GNMetadataHeader Gnmetadataheader;
++    Gnmetadataheader.SetLat (longPV.latitude);
++    Gnmetadataheader.SetLon (longPV.longitude);
++    Gnmetadataheader.SetStationID ((uint64_t)m_station_id);
++    dataRequest.data->AddHeader (Gnmetadataheader);
++    /* ---------------------------------------------- */
+     /*
+      * 2)If not suitable neighbour exist in the LocT and the SCF for the traffic class is set:
+      * a)Buffer the SHB packet in the BC forwarding buffer and omit execution of further steps
+@@ -593,6 +610,13 @@ namespace ns3 {
+ 
+     dataIndication.data = socket->RecvFrom (from);
+ 
++    /* [TBR] EXPERIMENTAL, FOR S-LDM DEVELOPMENT ONLY */
++    GNMetadataHeader Gnmetadataheader;
++    dataIndication.data->RemoveHeader (Gnmetadataheader,16);
++    std::cout << "GNMetadataHeader --- Lat: " << (double) (Gnmetadataheader.GetLat ())/DOT_ONE_MICRO << "; Lon: " << (double) (Gnmetadataheader.GetLon ())/DOT_ONE_MICRO
++              << "; StationID: " << (unsigned long long) (Gnmetadataheader.GetStationID ()) << std::endl;
++    /* ---------------------------------------------- */
++
+     dataIndication.data->RemoveHeader (basicHeader, 4);
+     dataIndication.GNRemainingLife = basicHeader.GetLifeTime ();
+     dataIndication.GNRemainingHL = basicHeader.GetRemainingHL ();
+diff --git a/src/automotive/wscript b/src/automotive/wscript
+index 8756791..7e2e5b0 100644
+--- a/src/automotive/wscript
++++ b/src/automotive/wscript
+@@ -54,6 +54,7 @@ def build(bld):
+         '/model/GeoNet/common-header.cc',
+         '/model/GeoNet/beacon-header.cc',
+         '/model/GeoNet/gn-utils.cc',
++        '/model/GeoNet/metadata-header.cc',
+ 
+          #CAM+DENM sources
+         '/model/ASN1/asn1-v1/AccelerationConfidence.c',
+@@ -321,6 +322,7 @@ def build(bld):
+         '/model/GeoNet/shortpositionvector.h',
+         '/model/GeoNet/beacon-header.h',
+         '/model/GeoNet/gn-utils.h',
++        '/model/GeoNet/metadata-header.h',
+ 
+         #CAM+DENM headers
+         '/model/ASN1/asn1-v1/AccelerationConfidence.h',

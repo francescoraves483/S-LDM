@@ -10,7 +10,7 @@ OBJ=$(SRC:$(SRC_DIR)/%.c=$(OBJ_DIR)/%.o)
 OBJ_CC=$(OBJ)
 
 CFLAGS += -Wall -O3 -Iinclude
-LDLIBS += -lpthread -lm
+LDLIBS += -lcpprest -lpthread -lcrypto -lm
 
 .PHONY: all clean
 
