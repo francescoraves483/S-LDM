@@ -1,3 +1,5 @@
+# S-LDM (Server Local Dynamic Map)
+
 ![](./docs/pics/CNIT_logo.png)
 
 ![](./docs/pics/PoliTO_logo.png)
@@ -15,6 +17,7 @@ The repository contains the following folders:
 - `docs`, for images and documentation
 - `examples`, for any example useful to the development of the S-LDM
 - `include`, for all the header files
+- `js`, containing the web-based vehicle visualized javascript files (vehicle-visualizer is licensed under **GPLv2** and it is part of [ms-van3t](https://github.com/marcomali/ms-van3t))
 - `src`, for all the .c and .cpp/.cc source files
 - `tester`, for a tester module, to be used in conjunction with [ms-van3t](https://github.com/marcomali/ms-van3t), with the aim of testing the S-LDM in the lab with emulated vehicles
 
@@ -22,3 +25,7 @@ The repository contains the following folders:
 ![](./docs/pics/EU_flag.jpg)
 
 *Please have a look also at disclaimer.txt, as this work is included in the European Union Horizon 2020 project 5G-CARMEN co-funded by the EU*
+
+# IMPORTANT
+
+The MIT license applies to all the modules included here, **except** for the `js` directory and for all the source files of the vehicle-visualizer module, which is licensed under GPLv2.
