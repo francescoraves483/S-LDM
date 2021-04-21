@@ -4,3 +4,4 @@
 -qpid-proton
 -Iinclude
 -Ivehicle-visualizer/include
+-Ioptions

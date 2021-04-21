@@ -5,7 +5,21 @@
 #include "vehicle-visualizer.h"
 #include "QuadKeyTS.h"
 
+extern "C" {
+	#include "options.h"
+}
+
 int main(int argc, char **argv) {
+	// First of all, parse the options
+	options_t sldm_opts;
+
+	// Read options from command line
+	options_initialize(&sldm_opts);
+	if(parse_options(argc, argv, &sldm_opts)) {
+		fprintf(stderr,"Error while parsing the options with the C options module.\n");
+		exit(EXIT_FAILURE);
+	}
+
 	// Create a new DB object
 	ldmmap::LDMMap db;
 	ldmmap::LDMMap::LDMMap_error_t db_retval;

@@ -28,4 +28,4 @@ The repository contains the following folders:
 
 # IMPORTANT
 
-The MIT license applies to all the modules included here, **except** for the `js` directory and for all the source files of the vehicle-visualizer module, which is licensed under GPLv2.
+The MIT license applies to all the modules included here, **except** for the `js` directory and for all the source files of the `vehicle-visualizer` and `options` modules, which is licensed under GPLv2.
