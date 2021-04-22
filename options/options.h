@@ -26,6 +26,7 @@
 
 #include <inttypes.h>
 #include <stdbool.h>
+#include <float.h>
 
 // Insert here the version string
 #define VERSION_STR "S-LDM 0.1.0-beta"
@@ -33,13 +34,24 @@
 // Valid options
 // Any new option should be handled in the switch-case inside parse_options() and the corresponding char should be added to VALID_OPTS
 // If an option accepts an additional argument, it is followed by ':'
-#define VALID_OPTS "hv"
+#define VALID_OPTS "hvA:E:F:"
 
 #define INIT_CODE 0xAE
+
+#define INVALID_LONLAT -DBL_MAX
 
 typedef struct options {
 	// = INIT_CODE if 'struct options' has been initialized via options_initialize()
 	uint8_t init_code;
+
+	double min_lat;
+	double min_lon;
+	double max_lat;
+	double max_lon;
+
+	// Extended area parameters (additive factors to the min/max lat and lon values of the internal area)
+	double ext_lat_factor;
+	double ext_lon_factor;
 } options_t;
 
 void options_initialize(struct options *options);
