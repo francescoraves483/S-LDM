@@ -64,13 +64,13 @@ namespace ldmmap
 
 	bool 
 	PHpoints::switchRemoveOnlyOne(void) {
-		if(m_iterateFull == true) {
-			m_iterateFull = false;
+		if(m_removeOnlyOne == true) {
+			m_removeOnlyOne = false;
 		} else {
-			m_iterateFull = true;
+			m_removeOnlyOne = true;
 		}
 
-		return m_iterateFull;
+		return m_removeOnlyOne;
 	}
 
 	PHpoints::PHpoints_retval_t 
