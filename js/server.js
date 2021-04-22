@@ -1,6 +1,6 @@
 /**
  * This file contains the server logic. The server should always be launched with Node.js (i.e. node server.js).
- * The goal of the Node.js server script is to read the object information from ms-van3t (via UDP/dgram socket) and
+ * The goal of the Node.js server script is to read the object information from the S-LDM (via UDP/dgram socket) and
  * pass it to the client via socket.io.
  * This Node.js code also sets up an HTTP server for the client (i.e. the browser) to connect to.
  */
@@ -43,7 +43,7 @@ app.use(express.static(path.join(__dirname, '/')));
 
 const http = require('http').Server(app);
 
-// Create a UDP socket to receive the data from ms-van3t
+// Create a UDP socket to receive the data from the S-LDM
 // As port, 48110 is used
 const dgram = require('dgram');
 const udpSocket = dgram.createSocket('udp4');
@@ -62,14 +62,14 @@ udpSocket.on('listening', () => {
     console.log('VehicleVisualizer: UDP connection ready at %s:%s',bindaddr,bindport);
 });
 
-// map draw message container -> this variable will contain a copy of the "map draw" message received by ms-van3t at the beginning
+// map draw message container -> this variable will contain a copy of the "map draw" message received by the S-LDM at the beginning
 // of the simulation/emulation session
 // It is needed, as, when a new client connects (and it can connect in any moment), the first message which should be sent
 // is the "map" one, to let it render the map centered at the proper coordinates
 // This message should indeed be received by the client before attempting to render any other moving object
 var mapmsg = null;
 
-// This callback is the most important one, as it is called every time a new UDP packet is received from ms-van3t
+// This callback is the most important one, as it is called every time a new UDP packet is received from the S-LDM
 // As a new packet is received, its content is forwarded to the client (i.e. the browser) via socket.io
 udpSocket.on('message', (msg,rinfo) => {
     // console.log('I have received from %s:%s the message: %s',rinfo.address,rinfo.port,msg);
@@ -79,16 +79,16 @@ udpSocket.on('message', (msg,rinfo) => {
     // If a "map" initial message is received, and the content appears to be correct, save it inside "mapmsg"
     if(msg_fields[0] === "map") {
         if (msg_fields.length !== 3) {
-            console.error("Error: received a corrupted map draw message from ms-van3t.");
+            console.error("Error: received a corrupted map draw message from the S-LDM.");
             process.exit(1);
         } else if(msg_fields.length === 3 && mapmsg != null) {
-            console.error("Error: received twice a map draw message from ms-van3t. This is not allowed");
+            console.error("Error: received twice a map draw message from the S-LDM. This is not allowed");
             process.exit(1);
         } else {
-            console.log("VehicleVisualizer: Map draw message received from ms-van3t.");
+            console.log("VehicleVisualizer: Map draw message received from the S-LDM.");
             mapmsg = msg.toString() + "," + mapbox_token;
         }
-    // If a "terminate" message is received from ms-van3t, just close the server
+    // If a "terminate" message is received from the S-LDM, just close the server
     } else if(msg_fields[0] === "terminate") {
         // This message is sent to terminate the Node.js server
         console.log("VehicleVisualizer: The server received a terminate message. The execution will be terminated.");

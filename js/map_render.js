@@ -1,6 +1,6 @@
 /**
  * This file contains the client JavaScript logic, in charge of receiving the coordinates of the objects
- * (i.e. the vehicles) and their heading from the server (which in turn receives them from ms-van3t via UDP).
+ * (i.e. the vehicles) and their heading from the server (which in turn receives them from the S-LDM via UDP).
  * This script uses the received information in order to render a Leaflet JS map showing all the moving nodes.
  * The server->client communication is realized thanks to socket.io.
  */
@@ -87,7 +87,7 @@ socket.on('message', (msg) => {
 				}
 				break;
 			// This 'case' is added just for additional safety. As the server is shut down every time a "terminate" message
-			// is received from ms-van3t and no "terminate" message is forwarded via socket.io, this point should never be
+			// is received from the S-LDM and no "terminate" message is forwarded via socket.io, this point should never be
 			// reached
 			case 'terminate':
 				console.log("The server has been terminated.");
@@ -183,7 +183,7 @@ function draw_map(lat,lon,mapbox_token) {
 	if(mapbox_token != null) {
 		hybridlayer = L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token=' + mapbox_token, {
 			maxZoom: 30,
-			attribution: '&copy; <a href="https://www.mapbox.com/about/maps/">Mapbox</a> | ms-van3t vehicle visualizer hybrid view',
+			attribution: '&copy; <a href="https://www.mapbox.com/about/maps/">Mapbox</a> | S-LDM vehicle visualizer hybrid view',
 			id: 'mapbox/satellite-streets-v11',
 			tileSize: 512,
 			zoomOffset: -1,
@@ -193,7 +193,7 @@ function draw_map(lat,lon,mapbox_token) {
 
 		satellitelayer = L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token=' + mapbox_token, {
 			maxZoom: 30,
-			attribution: '&copy; <a href="https://www.mapbox.com/about/maps/">Mapbox</a> | ms-van3t vehicle visualizer satellite view',
+			attribution: '&copy; <a href="https://www.mapbox.com/about/maps/">Mapbox</a> | S-LDM vehicle visualizer satellite view',
 			id: 'mapbox/satellite-v9',
 			tileSize: 512,
 			zoomOffset: -1,
@@ -203,7 +203,7 @@ function draw_map(lat,lon,mapbox_token) {
 
 		standardlayer = L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token=' + mapbox_token, {
 			maxZoom: 30,
-			attribution: '&copy; <a href="https://www.mapbox.com/about/maps/">Mapbox</a> | ms-van3t vehicle visualizer streets view',
+			attribution: '&copy; <a href="https://www.mapbox.com/about/maps/">Mapbox</a> | S-LDM vehicle visualizer streets view',
 			id: 'mapbox/streets-v11',
 			tileSize: 512,
 			zoomOffset: -1,
