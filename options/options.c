@@ -12,6 +12,7 @@
 #define LONGOPT_A "area"
 #define LONGOPT_E "ext-area-lat-factor"
 #define LONGOPT_F "ext-area-lon-factor"
+#define LONGOPT_c "cross-border-trigger"
 
 #define LONGOPT_STR_CONSTRUCTOR(LONGOPT_STR) "  --"LONGOPT_STR"\n"
 
@@ -22,6 +23,7 @@ static const struct option long_opts[]={
 	{LONGOPT_A,				required_argument,	NULL, 'A'},
 	{LONGOPT_E,				required_argument,	NULL, 'E'},
 	{LONGOPT_F,				required_argument,	NULL, 'F'},
+	{LONGOPT_c,				no_argument,		NULL, 'c'},
 	{NULL, 0, NULL, 0}
 };
 
@@ -39,14 +41,21 @@ static const struct option long_opts[]={
 	"  -E <latitude factor in degrees>: set the additive factor to add to the latitude values\n" \
 	"\t  defining the internal area, in order to define the external S-LDM area, superimposed\n" \
 	"\t  with the internal area of another S-LDM instance. Default value: 0 degrees (no external\n" \
-	"\t  area for what latitude values are concerned)."
+	"\t  area for what latitude values are concerned).\n"
 
 #define OPT_F_description \
 	LONGOPT_STR_CONSTRUCTOR(LONGOPT_F) \
 	"  -F <longitude factor in degrees>: set the additive factor to add to the longitude values\n" \
 	"\t  defining the internal area, in order to define the external S-LDM area, superimposed\n" \
 	"\t  with the internal area of another S-LDM instance. Default value: 0 degrees (no external\n" \
-	"\t  area for what longitude values are concerned)."
+	"\t  area for what longitude values are concerned).\n"
+
+#define OPT_c_description \
+	LONGOPT_STR_CONSTRUCTOR(LONGOPT_c) \
+	"  -c: set the cross border trigger mode. In this mode, two S-LDM instances with the -c\n" \
+	"\t  option and covering a border area will both send their data to other services even\n" \
+	"\t  if the triggering vehicle is located in their extended areas (not inside their internal\n" \
+	"\t  area). This mode is disabled by default.\n"
 
 static void print_long_info(char *argv0) {
 	fprintf(stdout,"\nUsage: %s [-A S-LDM coverage internal area] [options]\n"
@@ -57,6 +66,7 @@ static void print_long_info(char *argv0) {
 		OPT_A_description
 		OPT_E_description
 		OPT_F_description
+		OPT_c_description
 		,
 		argv0,argv0,argv0);
 
@@ -86,12 +96,13 @@ void options_initialize(struct options *options) {
 
 	options->ext_lat_factor=0;
 	options->ext_lon_factor=0;
+
+	options->cross_border_trigger=false;
 }
 
 unsigned int parse_options(int argc, char **argv, struct options *options) {
 	int char_option;
 	bool version_flg=false;
-	size_t filenameLen=0;
 	char *sPtr; // String pointer for strtod() calls
 
 	if(options->init_code!=INIT_CODE) {
@@ -144,6 +155,10 @@ unsigned int parse_options(int argc, char **argv, struct options *options) {
 					fprintf(stderr,"Error in parsing the longitude factor for the extended area (remember that it must be positive).\n");
 					print_short_info_err(options,argv[0]);
 				}
+				break;
+
+			case 'c':
+				options->cross_border_trigger=true;
 				break;
 
 			case 'v':

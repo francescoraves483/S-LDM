@@ -34,7 +34,7 @@
 // Valid options
 // Any new option should be handled in the switch-case inside parse_options() and the corresponding char should be added to VALID_OPTS
 // If an option accepts an additional argument, it is followed by ':'
-#define VALID_OPTS "hvA:E:F:"
+#define VALID_OPTS "hvA:E:F:c"
 
 #define INIT_CODE 0xAE
 
@@ -52,6 +52,8 @@ typedef struct options {
 	// Extended area parameters (additive factors to the min/max lat and lon values of the internal area)
 	double ext_lat_factor;
 	double ext_lon_factor;
+
+	bool cross_border_trigger;
 } options_t;
 
 void options_initialize(struct options *options);

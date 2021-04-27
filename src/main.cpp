@@ -25,6 +25,9 @@ int main(int argc, char **argv) {
 		sldm_opts.min_lat-sldm_opts.ext_lat_factor << "," << sldm_opts.min_lon-sldm_opts.ext_lon_factor << "],[" <<
 		sldm_opts.max_lat+sldm_opts.ext_lat_factor  << "," << sldm_opts.max_lon+sldm_opts.ext_lon_factor << "]" <<
 		std::endl;
+	if(sldm_opts.cross_border_trigger==true) {
+		std::cout << "Cross-border trigger mode enabled." << std::endl;
+	}
 
 	// Create a new DB object
 	ldmmap::LDMMap db;
