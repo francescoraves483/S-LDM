@@ -1,6 +1,0 @@
-decoder-module/asn1/include
-decoder-module/include
-include
-options
-tester/ms-van3t-patch
-vehicle-visualizer/include
