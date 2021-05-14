@@ -4,6 +4,8 @@
 #include <string>
 #include <iostream>
 #include <sstream>
+#include <vector>
+#include <array>
 
 namespace QuadKeys
 {
@@ -11,11 +13,20 @@ namespace QuadKeys
     {
         private:
         	double Clip(double n, double minValue, double maxValue);
+			int m_levelOfDetail; //used to set the levelOfDetail indipendently
+       		double m_latlon_variation;
+       		static bool finder(std::string vi, std::string vk, int l, std::array<int,4> &chars);
 
         public:
+        	QuadKeyTS();
         	unsigned int MapSize(int levelOfDetail);
-        	std::string LatLonToQuadKey(double latitude, double longitude, int levelOfDetail);
-        	std::string LatLonToQuadKeyRange(double min_latitude, double max_latitude, double min_longitude, double max_longitude, int levelOfDetail);
+        	void setLevelOfDetail(int levelOfDetail = 16);
+        	std::string LatLonToQuadKey(double latitude, double longitude);
+        	std::vector<std::string> LatLonToQuadKeyRange(double min_latitude, double max_latitude, double min_longitude, double max_longitude);
+        	// This method should be called on the output of LatLonToQuadKeyRange(), in order to consolidate together quadkeys, when possible,
+        	// and reduce the size of the filter
+        	// The input vector is passed by reference and it is thus modified by unifyQuadkeys()
+    		void unifyQuadkeys(std::vector<std::string> &quadKeys);
     };
 }
 

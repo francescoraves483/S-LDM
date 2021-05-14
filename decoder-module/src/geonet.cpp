@@ -44,7 +44,6 @@ namespace etsiDecoder {
     GeoNet::decodeGN(unsigned char *packet)
     {
         GNDataIndication_t dataIndication = {};
-        char* from;
         basicHeader basicH;
         commonHeader commonH;
 

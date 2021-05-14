@@ -29,7 +29,7 @@
 #include <float.h>
 
 // Insert here the version string
-#define VERSION_STR "S-LDM 0.1.0-beta"
+#define VERSION_STR "S-LDM 0.1.1-beta"
 
 // Valid options
 // Any new option should be handled in the switch-case inside parse_options() and the corresponding char should be added to VALID_OPTS

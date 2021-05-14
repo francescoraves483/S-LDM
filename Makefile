@@ -35,7 +35,7 @@ OBJ_CC+=$(OBJ_ASN1)
 
 CXXFLAGS += -Wall -O3 -Iinclude -Ivehicle-visualizer/include -Ioptions -std=c++17 -Idecoder-module/include -Idecoder-module/asn1/include
 CFLAGS += -Wall -O3 -Iinclude -Ioptions -Idecoder-module/asn1/include
-LDLIBS += -lcpprest -lpthread -lcrypto -lm
+LDLIBS += -lcpprest -lpthread -lcrypto -lm -lqpid-proton-cpp
 
 .PHONY: all clean
 

@@ -4,6 +4,7 @@
 #include "LDMmap.h"
 #include "vehicle-visualizer.h"
 #include "QuadKeyTS.h"
+#include "AMQPclient.h"
 
 extern "C" {
 	#include "options.h"
@@ -32,22 +33,18 @@ int main(int argc, char **argv) {
 		std::cout << "Cross-border trigger mode enabled." << std::endl;
 	}
 
-	// Create a new DB object
-	ldmmap::LDMMap db;
-	ldmmap::LDMMap::LDMMap_error_t db_retval;
+	/* ----------------- TEST AREA (insert here your test code, which will be removed from the final version of main() ----------------- */
+	/* ------------------------------------------------------------------------------------------------------------------------------------ */
+	/* ------------------------------------------------------------------------------------------------------------------------------------ */
+	/* ------------------------------------------------------------------------------------------------------------------------------------ */
+	/* ------------------------------------------------------------------------------------------------------------------------------------ */
+	/* ------------------------------------------------------------------------------------------------------------------------------------ */
 
-	// Create a new vehicle visualizer object
+	// Create a new veheicle visualizer object
 	//vehicleVisualizer vehicleVisObj;
-
-	// Quadkey calculation object
-	QuadKeys::QuadKeyTS quadcalc;
 
 	//vehicleVisObj.startServer();
 	//vehicleVisObj.connectToServer ();
-
-	// Sample vehicle
-	ldmmap::vehicleData_t veh1 = {188321312, 45.562149, 8.055311, 400, -170, 1216424682444333};
-	db.insert(veh1);
 
 	// Draw the sample vehicle on the map (simulating 5 updates)
 	//vehicleVisObj.sendMapDraw(45.562149, 8.055311);
@@ -60,14 +57,6 @@ int main(int argc, char **argv) {
 	// vehicleVisObj.sendObjectUpdate("veh1",45.562119, 8.055311);
 	// sleep(1);
 	// vehicleVisObj.sendObjectUpdate("veh1",45.562109, 8.055311);
-
-	// Sample quadkey calculation
-	std::cout << "The quadkey for (45.562109,8.055311) with detail level = 15 is: " << quadcalc.LatLonToQuadKey(45.562109,8.055311,15) << std::endl;
-
-	//std::cout << "Press a button to terminate this sample main()..." << std::endl;
-	//std::getchar();
-
-	db.clear();
 
 	/* CAM sample (GeoNet,BTP,CAM) (85 bytes) */
     static unsigned char cam[85] = {
@@ -105,6 +94,39 @@ int main(int argc, char **argv) {
     		(double)decoded_cam->cam.camParameters.basicContainer.referencePosition.latitude/10000000.0,
     		(double) decoded_cam->cam.camParameters.basicContainer.referencePosition.longitude/10000000.0);
     }
+
+	/* ------------------------------------------------------------------------------------------------------------------------------------ */
+	/* ------------------------------------------------------------------------------------------------------------------------------------ */
+	/* ------------------------------------------------------------------------------------------------------------------------------------ */
+	/* ------------------------------------------------------------------------------------------------------------------------------------ */
+	/* ------------------------------------------------------------------------------------------------------------------------------------ */
+
+	// Create a new DB object
+	ldmmap::LDMMap *db_ptr = new ldmmap::LDMMap();
+
+	// Before starting the AMQP client event loop, we should implement here the creation of a parallel thread, reading periodically 
+	// (e.g. every 1/2 s) the database through the pointer "db_ptr" and "cleaning" the entries which are too old
+
+	// We should also start here a second parallel thread, reading periodically the database (e.g. every 500 ms) and sending the vehicle data to
+	// the vehicleVisualizer
+
+	// All these additional thread should start with the "detached" attribute (?)
+
+	// Start the AMQP client event loop (for the time being, on loopback, but some options will be added in the future)
+    try {
+        std::string conn_url = argc > 1 ? argv[1] : "127.0.0.1:5672";
+        std::string addr = argc > 2 ? argv[2] : "examples";
+
+
+        AMQPClient recvClient("127.0.0.1:5672", "examples", sldm_opts.min_lat, sldm_opts.max_lat, sldm_opts.min_lon, sldm_opts.max_lon, 16, &sldm_opts, db_ptr);
+        proton::container(recvClient).run();
+
+        return 0;
+    } catch (const std::exception& e) {
+        std::cerr << e.what() << std::endl;
+    }
+
+	db_ptr->clear();
 
 	return 0;
 }
