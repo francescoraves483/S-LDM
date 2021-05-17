@@ -21,8 +21,8 @@ namespace ldmmap
 	LDMMap::LDMMap() {
 		m_card = 0;
 
-		m_central_lat = 45.0;
-		m_central_lon = 8.0;
+		m_central_lat = 0.0;
+		m_central_lon = 0.0;
 	}
 
 	LDMMap::~LDMMap() {
