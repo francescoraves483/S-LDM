@@ -47,8 +47,7 @@ void *DBcleaner_callback(void *arg) {
 
 			// ---- These operations will be performed periodically ----
 
-			std::cout << "[INFO] Cleaning DB... " << std::endl;
-			db_ptr->deleteOlderThan(DB_DELETE_OLDER_THAN_SECONDS);
+			db_ptr->deleteOlderThan(DB_DELETE_OLDER_THAN_SECONDS*1e3);
 
 			// --------
 
@@ -65,7 +64,7 @@ void *DBcleaner_callback(void *arg) {
 void updateVisualizer(ldmmap::vehicleData_t vehdata,void *vizObjVoidPtr) {
 	vehicleVisualizer *vizObjPtr = static_cast<vehicleVisualizer *>(vizObjVoidPtr);
 
-	vizObjPtr->sendObjectUpdate(std::to_string(vehdata.stationID),vehdata.lat,vehdata.lon);
+	vizObjPtr->sendObjectUpdate(std::to_string(vehdata.stationID),vehdata.lat,vehdata.lon,vehdata.heading);
 }
 
 void *VehVizUpdater_callback(void *arg) {
@@ -244,17 +243,17 @@ int main(int argc, char **argv) {
 	dbtest.insert(veh1);
 	std::printf("Test vehicle 1 inserted @ %lu\n",veh1.timestamp_us);
 
-	ldmmap::vehicleData_t veh2 = {.stationID=288321312, .lat=45.512149, .lon=8.355311, .elevation=440, .heading=120, .speed_ms=17, .gnTimestamp=34235235235, .timestamp_us=0};
+	ldmmap::vehicleData_t veh2 = {.stationID=288321312, .lat=45.512149, .lon=8.355311, .elevation=440, .heading=100, .speed_ms=17, .gnTimestamp=34235235235, .timestamp_us=0};
 	veh2.timestamp_us = get_timestamp_us()-2*1e6; // 2 seconds ago
 	dbtest.insert(veh2);
 	std::printf("Test vehicle 2 inserted @ %lu\n",veh2.timestamp_us);
 
-	ldmmap::vehicleData_t veh3 = {.stationID=388321312, .lat=45.592149, .lon=8.855311, .elevation=440, .heading=120, .speed_ms=17, .gnTimestamp=34235235235, .timestamp_us=0};
+	ldmmap::vehicleData_t veh3 = {.stationID=388321312, .lat=45.592149, .lon=8.855311, .elevation=440, .heading=80, .speed_ms=17, .gnTimestamp=34235235235, .timestamp_us=0};
 	veh3.timestamp_us = get_timestamp_us()-5*1e6; // 5 seconds ago
 	dbtest.insert(veh3);
 	std::printf("Test vehicle 3 inserted @ %lu\n",veh3.timestamp_us);
 
-	ldmmap::vehicleData_t veh4 = {.stationID=488321312, .lat=45.362149, .lon=8.755311, .elevation=440, .heading=120, .speed_ms=17, .gnTimestamp=34235235235, .timestamp_us=0};
+	ldmmap::vehicleData_t veh4 = {.stationID=488321312, .lat=45.362149, .lon=8.755311, .elevation=440, .heading=10, .speed_ms=17, .gnTimestamp=34235235235, .timestamp_us=0};
 	veh4.timestamp_us = get_timestamp_us()-7*1e6; // 7 seconds ago
 	dbtest.insert(veh4);
 	std::printf("Test vehicle 4 inserted @ %lu\n",veh4.timestamp_us);

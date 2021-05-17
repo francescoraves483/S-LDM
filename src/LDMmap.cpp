@@ -139,14 +139,16 @@ namespace ldmmap
 
 	void 
 	LDMMap::deleteOlderThan(double time_milliseconds) {
+		uint64_t now = get_timestamp_us();
+
 		std::shared_lock<std::shared_mutex> lk(m_mainmapmut);
 
 		for(auto& [key, val] : m_ldmmap) {
 			// Iterate over the single lower maps
 			val.first->lock();
 
-			for (auto mit=val.second.cbegin(); mit!=val.second.cend();) {
-				if(((double)(get_timestamp_us()-mit->second.vehData.timestamp_us))/1000.0 > time_milliseconds) {
+			for (auto mit=val.second.cbegin();mit!=val.second.cend();) {
+				if(((double)(now-mit->second.vehData.timestamp_us))/1000.0 > time_milliseconds) {
 					mit = val.second.erase(mit);
 					m_card--;
 				} else {
