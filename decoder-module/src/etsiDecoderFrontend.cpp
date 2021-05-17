@@ -34,9 +34,17 @@ namespace etsiDecoder {
 		GNDataIndication_t gndataIndication;
 		BTPDataIndication_t btpDataIndication;
 
-		gndataIndication = geonet.decodeGN(buffer);
+		if(geonet.decodeGN(buffer,&gndataIndication)!= GN_OK)
+		  {
+		    std::cerr << "Warning: GeoNet unable to decode a received packet." << std::endl;
+		    return ETSI_DECODED_ERROR;
+		  }
 
-		btpDataIndication = BTP.decodeBTP(gndataIndication);
+		if(BTP.decodeBTP(gndataIndication,&btpDataIndication)!= BTP_OK)
+		  {
+		    std::cerr << "Warning: BTP unable to decode a received packet." << std::endl;
+		    return ETSI_DECODED_ERROR;
+		  }
 
 		if(m_print_pkt==true) {
 			std::cout << "ETSI packet content :" << std::endl;
@@ -62,6 +70,13 @@ namespace etsiDecoder {
 				return ETSI_DECODER_ERROR;
 			}
 		} else if(btpDataIndication.destPort == DEN_PORT) {
+
+			decoded_data.posLat = gndataIndication.GnAddressDest.posLat;
+			decoded_data.posLong = gndataIndication.GnAddressDest.posLong;
+			decoded_data.distA = gndataIndication.GnAddressDest.distA;
+			decoded_data.distB = gndataIndication.GnAddressDest.distB;
+			decoded_data.angle = gndataIndication.GnAddressDest.angle;
+
 			decoded_data.type = ETSI_DECODED_DENM;
 
 			decode_result = asn_decode(0, ATS_UNALIGNED_BASIC_PER, &asn_DEF_DENM, &decoded_, btpDataIndication.data, btpDataIndication.lenght);

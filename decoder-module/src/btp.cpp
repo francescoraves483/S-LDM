@@ -1,43 +1,55 @@
 //
 // Created by carlos on 11/05/21.
 //
-
+#include <iostream>
 #include "btp.h"
 namespace etsiDecoder{
     btp::btp() = default;
 
     btp::~btp() = default;
 
-    BTPDataIndication_t
-    btp::decodeBTP(GNDataIndication_t dataIndication) {
+    btpError_e
+    btp::decodeBTP(GNDataIndication_t dataIndication, BTPDataIndication_t* btpDataIndication) {
         btpHeader header;
-        BTPDataIndication_t btpDataIndication = {};
 
-        btpDataIndication.data = dataIndication.data;
 
-        header.removeHeader(btpDataIndication.data);
-        btpDataIndication.data += 4;
+        btpDataIndication->data = dataIndication.data;
 
-        btpDataIndication.BTPType = dataIndication.upperProtocol;
-        btpDataIndication.destPort = header.getDestPort ();
+        header.removeHeader(btpDataIndication->data);
+        btpDataIndication->data += 4;
 
-        if(btpDataIndication.BTPType == BTP_A)
+        btpDataIndication->BTPType = dataIndication.upperProtocol;
+
+        if((header.getDestPort ()!= CA_PORT) && (header.getDestPort ()!= DEN_PORT))
+          {
+            std::cerr << "BTP port not supported" << std::endl;
+            return BTP_ERROR;
+          }
+
+        btpDataIndication->destPort = header.getDestPort ();
+
+        if(btpDataIndication->BTPType == BTP_A)
         {
-            btpDataIndication.sourcePort = header.getSourcePort ();
-            btpDataIndication.destPInfo = 0;
+            btpDataIndication->sourcePort = header.getSourcePort ();
+            btpDataIndication->destPInfo = 0;
         }
-        else //BTP-B
+        else if(btpDataIndication->BTPType == BTP_B)  //BTP-B
         {
-            btpDataIndication.destPInfo = header.getDestPortInfo ();
-            btpDataIndication.sourcePort = 0;
+            btpDataIndication->destPInfo = header.getDestPortInfo ();
+            btpDataIndication->sourcePort = 0;
         }
-        //btpDataIndication.GnAddress = dataIndication.GnAddressDest;  // Left for gbc implementation
-        btpDataIndication.GNTraClass = dataIndication.GNTraClass;
-        btpDataIndication.GNRemPLife = dataIndication.GNRemainingLife;
-        btpDataIndication.GNPositionV = dataIndication.SourcePV;
-        btpDataIndication.data = dataIndication.data + 4;
-        btpDataIndication.lenght = dataIndication.lenght - 4;
+        else
+          {
+            std::cerr << "Incorrect transport protocol " << std::endl;
+            return BTP_ERROR;
+          }
+        btpDataIndication->GnAddress = dataIndication.GnAddressDest;
+        btpDataIndication->GNTraClass = dataIndication.GNTraClass;
+        btpDataIndication->GNRemPLife = dataIndication.GNRemainingLife;
+        btpDataIndication->GNPositionV = dataIndication.SourcePV;
+        btpDataIndication->data = dataIndication.data + 4;
+        btpDataIndication->lenght = dataIndication.lenght - 4;
 
-        return btpDataIndication;
+        return BTP_OK;
     }
 }

@@ -9,6 +9,7 @@
 extern "C" {
 	#include "options.h"
 	#include "CAM.h"
+	#include "DENM.h"
 }
 
 #include "etsiDecoderFrontend.h"
@@ -73,6 +74,23 @@ int main(int argc, char **argv) {
             0xfe, 0xeb, 0xff, 0xf6, 0x08                   /* .. */
     };
 
+    /* DENM sample (140 bytes) */
+    static unsigned char denm[104] = {
+    0x11, 0x00, 0xf1, 0x01, 0x20, 0x40, 0x01, 0x00, /* .... @.. */
+    0x00, 0x30, 0x01, 0x00, 0x00, 0x02, 0x00, 0x00, /* .0...... */
+    0x3c, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, /* <....... */
+    0x97, 0xe0, 0xf1, 0x5c, 0x1a, 0xda, 0x91, 0x36, /* ...\...6 */
+    0x04, 0x90, 0x39, 0x55, 0x00, 0x00, 0x00, 0x00, /* ..9U.... */
+    0x1a, 0xda, 0x91, 0x35, 0x04, 0x90, 0x39, 0x55, /* ...5..9U */
+    0x00, 0x64, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /* .d...... */
+    0x07, 0xd2, 0x00, 0x00, 0x02, 0x01, 0x2e, 0x5d, /* .......] */
+    0xa4, 0xe7, 0x20, 0x17, 0x2e, 0xd2, 0x73, 0x80, /* .. ...s. */
+    0x00, 0x0f, 0xf2, 0xfc, 0x3f, 0xe8, 0xc0, 0x00, /* ....?... */
+    0x00, 0x00, 0x55, 0xd6, 0xb4, 0x9d, 0x20, 0x1d, /* ..U... . */
+    0x69, 0x3a, 0x40, 0x10, 0x00, 0x00, 0x00, 0x00, /* i:@..... */
+    0xdb, 0xba, 0x1f, 0x0f, 0x08, 0x20, 0x18, 0x00, /* ..... .. */
+    };
+
 
     unsigned char *ptr = &cam[0];
 
@@ -94,6 +112,17 @@ int main(int argc, char **argv) {
     		(double)decoded_cam->cam.camParameters.basicContainer.referencePosition.latitude/10000000.0,
     		(double) decoded_cam->cam.camParameters.basicContainer.referencePosition.longitude/10000000.0);
     }
+    else if(decodedData.type == etsiDecoder::ETSI_DECODED_DENM){
+        DENM_t *decoded_denm;
+        decoded_denm = (DENM_t *) decodedData.decoded_msg;
+        printf("GNTimestamp: %u\n",decodedData.gnTimestamp);
+        printf("GeoArea: \nLat: %.7lf, Lon: %.7lf, DistA %u, DistB %u, Angle %u\n",
+                (double)decodedData.posLat/10000000.0,
+                (double) decodedData.posLong/10000000.0,
+                decodedData.distA,
+                decodedData.distB,
+                decodedData.angle);
+      }
 
 	/* ------------------------------------------------------------------------------------------------------------------------------------ */
 	/* ------------------------------------------------------------------------------------------------------------------------------------ */

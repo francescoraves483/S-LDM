@@ -21,6 +21,12 @@ namespace etsiDecoder {
 		etsiDecodedType_e type;
 
 		uint32_t gnTimestamp;
+		//For DENMs GeoArea
+		int32_t posLong;
+		int32_t posLat;
+		uint16_t distA;
+		uint16_t distB;
+		uint16_t angle;
 	} etsiDecodedData_t;
 
 	class decoderFrontend {

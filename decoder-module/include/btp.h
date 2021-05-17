@@ -18,7 +18,7 @@ namespace etsiDecoder {
     public :
         btp();
         ~btp();
-        BTPDataIndication_t decodeBTP(GNDataIndication_t dataIndication);
+        btpError_e decodeBTP(GNDataIndication_t dataIndication, BTPDataIndication_t* btpDataIndication);
 
     };
 }

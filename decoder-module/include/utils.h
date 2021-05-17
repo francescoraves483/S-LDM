@@ -13,8 +13,9 @@ namespace etsiDecoder {
 		GN_OK = 0,
 		GN_VERSION_ERROR = 1,
 		GN_SECURED_ERROR = 2,
-		GN_HOP_LIMIT_ERROR = 3,
-		GN_TYPE_ERROR = 4
+		GN_LIFETIME_ERROR = 3,
+		GN_HOP_LIMIT_ERROR = 4,
+		GN_TYPE_ERROR = 5,
 	} gnError_e;
 
 	typedef enum {
@@ -96,6 +97,7 @@ namespace etsiDecoder {
 	typedef struct gndataIndication {
 	    uint8_t upperProtocol;
 	    GNlpv_t SourcePV;
+	    GeoArea_t GnAddressDest; // GN destination adress -- destination adress(GeoUnicast) or geo. area (GeoBroadcast or GeoAnycast)
 	    uint8_t GNTraClass; // GN Traffic Class
 	    double GNRemainingLife; //GN Remaining Packet Lifetime in [s] /OPCIONAL/
 	    int16_t GNRemainingHL; // GN Remaining Hop Limit /OPCIONAL/
