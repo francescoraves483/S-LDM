@@ -1,5 +1,7 @@
 #include "LDMmap.h"
+#include "utils.h"
 #include <cmath>
+#include <iostream>
 
 #define DEFINE_KEYS(k_up,k_low,stationID) \
 		uint32_t k_low = stationID & 0x0000FFFF; \
@@ -18,6 +20,9 @@ namespace ldmmap
 
 	LDMMap::LDMMap() {
 		m_card = 0;
+
+		m_central_lat = 45.0;
+		m_central_lon = 8.0;
 	}
 
 	LDMMap::~LDMMap() {
@@ -85,6 +90,7 @@ namespace ldmmap
 			} else {
 				std::lock_guard<std::shared_mutex> lk(*m_ldmmap[key_upper].first);
 				m_ldmmap[key_upper].second.erase(stationID);
+				m_card--;
 			}
 		}
 
@@ -131,6 +137,27 @@ namespace ldmmap
 		return LDMMAP_OK;
 	}
 
+	void 
+	LDMMap::deleteOlderThan(double time_milliseconds) {
+		std::shared_lock<std::shared_mutex> lk(m_mainmapmut);
+
+		for(auto& [key, val] : m_ldmmap) {
+			// Iterate over the single lower maps
+			val.first->lock();
+
+			for (auto mit=val.second.cbegin(); mit!=val.second.cend();) {
+				if(((double)(get_timestamp_us()-mit->second.vehData.timestamp_us))/1000.0 > time_milliseconds) {
+					mit = val.second.erase(mit);
+					m_card--;
+				} else {
+					++mit;
+				}
+			}
+
+			val.first->unlock();
+		}
+	}
+
 	void
 	LDMMap::clear() {
 		std::shared_lock<std::shared_mutex> lk(m_mainmapmut);
@@ -153,5 +180,42 @@ namespace ldmmap
 
 		// Set the cardinality of the map to 0 again
 		m_card = 0;
+	}
+
+	void 
+	LDMMap::printAllContents(std::string label) {
+		std::cout << "[" << label << "] Vehicle IDs: ";
+
+		std::shared_lock<std::shared_mutex> lk(m_mainmapmut);
+
+		for(auto const& [key, val] : m_ldmmap) {
+			// Iterate over the single lower maps
+			val.first->lock_shared();
+
+			for(auto const& [keyl, vall] : val.second) {
+				std::cout << vall.vehData.stationID << ", ";
+			}
+
+			val.first->unlock_shared();
+		}
+
+		std::cout << std::endl;
+	}
+
+	void 
+	LDMMap::executeOnAllContents(void (*oper_fcn)(vehicleData_t,void *),void *additional_args) {
+		std::shared_lock<std::shared_mutex> lk(m_mainmapmut);
+
+		for(auto const& [key, val] : m_ldmmap) {
+			// Iterate over the single lower maps
+			val.first->lock_shared();
+
+			for(auto const& [keyl, vall] : val.second) {
+				// Execute the callback for every entry
+				oper_fcn(vall.vehData,additional_args);
+			}
+
+			val.first->unlock_shared();
+		}
 	}
 }

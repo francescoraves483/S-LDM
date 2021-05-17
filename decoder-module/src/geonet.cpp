@@ -56,7 +56,7 @@ namespace etsiDecoder {
         //1)Check version field
         if(basicH.GetVersion() != m_GnPtotocolVersion)
         {
-            std::cerr<< "Incorrect version of GN protocol" << std::endl;
+            std::cerr<< "[ERROR] [Decoder] Incorrect version of GN protocol" << std::endl;
             return GN_VERSION_ERROR;
 
         }
@@ -64,14 +64,14 @@ namespace etsiDecoder {
         if(basicH.GetNextHeader()==2) //a) if NH=0 or NH=1 proceed with common header procesing
         {
             //Secured packet
-            std::cerr << "Secured packet not supported" << std::endl;
+            std::cerr << "[ERROR] [Decoder] Secured packet not supported" << std::endl;
             return GN_SECURED_ERROR;
         }
         if(!decodeLT(basicH.GetLifeTime(),&dataIndication->GNRemainingLife))
         {
-            std::cerr << "Unable to decode lifetime field" << std::endl;
+            std::cerr << "[ERROR] [Decoder] Unable to decode lifetime field" << std::endl;
             return GN_LIFETIME_ERROR;
-          }
+        }
         //Common Header Processing according to ETSI EN 302 636-4-1 [10.3.5]
         commonH.removeHeader(dataIndication->data);
         dataIndication->data += 8;
@@ -80,7 +80,7 @@ namespace etsiDecoder {
         //1) Check MHL field
         if(commonH.GetMaxHopLimit() < basicH.GetRemainingHL())
         {
-            std::cerr << "Max hop limit greater than remaining hop limit" << std::endl; //a) if MHL<RHL discard packet and omit execution of further steps
+            std::cerr << "[ERROR] [Decoder] Max hop limit greater than remaining hop limit" << std::endl; //a) if MHL<RHL discard packet and omit execution of further steps
             return GN_HOP_LIMIT_ERROR;
         }
         //2) process the BC forwarding buffer, for now not implemented (SCF in traffic class disabled)
@@ -96,12 +96,12 @@ namespace etsiDecoder {
             case TSB:
                 if((commonH.GetHeaderSubType ()==0)) dataIndication = processSHB(dataIndication);
                 else {
-                    std::cerr << "GeoNet packet not supported" << std::endl;
+                    std::cerr << "[ERROR] [Decoder] GeoNet packet not supported" << std::endl;
                     return GN_TYPE_ERROR;
                   }
                 break;
             default:
-                std::cerr << "GeoNet packet not supported" << std::endl;
+                std::cerr << "[ERROR] [Decoder] GeoNet packet not supported" << std::endl;
                 return GN_TYPE_ERROR;
         }
         return GN_OK;
