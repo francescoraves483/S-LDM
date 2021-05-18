@@ -122,12 +122,15 @@ AMQPClient::on_message(proton::delivery &d, proton::message &msg) {
 		vehdata.heading = decoded_cam->cam.camParameters.highFrequencyContainer.choice.basicVehicleContainerHighFrequency.heading.headingValue/10.0;
 		vehdata.speed_ms = decoded_cam->cam.camParameters.highFrequencyContainer.choice.basicVehicleContainerHighFrequency.speed.speedValue/100.0;
 		vehdata.gnTimestamp = decodedData.gnTimestamp;
+		vehdata.stationID = stationID; // It is very important to save also the stationID
 
 		db_retval=m_db_ptr->insert(vehdata);
 
 		if(db_retval!=ldmmap::LDMMap::LDMMAP_OK && db_retval!=ldmmap::LDMMap::LDMMAP_UPDATED) {
 			std::cerr << "Warning! Insert on the database for vehicle " << (int) stationID << "failed!" << std::endl;
 		}
+
+		ASN_STRUCT_FREE(asn_DEF_CAM,decoded_cam);
 	} else {
 		std::cerr << "Warning! Only CAM messages are supported for the time being!" << std::endl;
 		return;
