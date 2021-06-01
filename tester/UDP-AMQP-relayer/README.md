@@ -16,3 +16,5 @@ If no options are specified, the relayer will try to connect to `127.0.0.1:5672`
 You can also specify a custom URL or topic/queue name with, respectively, the `--url` and `--queue` options.
 
 This relayer has been tested with an [Apache ActiveMQ "Classic"](https://activemq.apache.org/components/classic/download/) broker (version 5).
+
+The relayer relies on the [TCLAP library](http://tclap.sourceforge.net/) in order to parse the command line options.
