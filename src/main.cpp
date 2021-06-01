@@ -301,7 +301,7 @@ int main(int argc, char **argv) {
 	// the vehicleVisualizer
 	// pthread_attr_init(&tattr);
 	// pthread_attr_setdetachstate(&tattr,PTHREAD_CREATE_DETACHED);
-	pthread_create(&vehviz_tid,NULL,VehVizUpdater_callback,(void *) &db_ptr);
+	pthread_create(&vehviz_tid,NULL,VehVizUpdater_callback,(void *) db_ptr);
 	// pthread_attr_destroy(&tattr);
 
 	// Start the AMQP client event loop (for the time being, on loopback, but some options will be added in the future)
