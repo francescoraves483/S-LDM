@@ -86,8 +86,8 @@ int main(int argc, char *argv[]) {
 		cam_args.m_queue_name=queueArg.getValue();
 
 		std::cout << "The relayer will connect to " + cam_args.m_broker_address + "/" + cam_args.m_queue_name << std::endl;
-	} catch (TCLAP::ArgException &e) { 
-		std::cerr << "error: " << e.error() << " for arg " << e.argId() << std::endl; 
+	} catch (TCLAP::ArgException &tclape) { 
+		std::cerr << "TCLAP error: " << tclape.error() << " for argument " << tclape.argId() << std::endl;
 	}
 
 
