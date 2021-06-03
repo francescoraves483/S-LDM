@@ -18,6 +18,7 @@
 #include "areaFilter.h"
 #include "LDMmap.h"
 #include "utils.h"
+#include "triggerManager.h"
 
 class AMQPClient : public proton::messaging_handler {
 	private:
@@ -39,12 +40,17 @@ class AMQPClient : public proton::messaging_handler {
 		areaFilter m_areaFilter;
 		struct options *m_opts_ptr;
 		ldmmap::LDMMap *m_db_ptr;
+		indicatorTriggerManager m_indicatorTrgMan;
+		bool m_indicatorTrgMan_enabled;
 	public:
 		AMQPClient(const std::string &u,const std::string &a,const double &latmin,const double &latmax,const double &lonmin, const double &lonmax, const int &lev, struct options *opts_ptr, ldmmap::LDMMap *db_ptr) :
-      	conn_url_(u), addr_(a), max_latitude(latmax), max_longitude(lonmax), min_latitude(latmin), min_longitude(lonmin), levelOfdetail(lev), m_opts_ptr(opts_ptr), m_db_ptr(db_ptr) {
+      	conn_url_(u), addr_(a), max_latitude(latmax), max_longitude(lonmax), min_latitude(latmin), min_longitude(lonmin), levelOfdetail(lev), m_opts_ptr(opts_ptr), m_db_ptr(db_ptr), m_indicatorTrgMan(db_ptr) {
       		m_printMsg=false;
       		m_areaFilter.setOptions(m_opts_ptr);
+      		m_indicatorTrgMan_enabled=false;
       	}
+
+      	void setIndicatorTriggerManager(bool enabled) {m_indicatorTrgMan_enabled=enabled;}
 		
 		void on_container_start(proton::container &c) override;
 		void on_message(proton::delivery &d, proton::message &msg) override;

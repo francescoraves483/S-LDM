@@ -55,3 +55,21 @@ int timer_fd_create(struct pollfd &pollfd,int &clockFd,uint64_t time_us) {
 
 	return 0;
 }
+
+std::string exteriorLights_bit_to_string(uint8_t extLights) {
+	std::string extLightsStr="";
+	const char *bitnames[]={"lowBeamHeadlightsOn", "highBeamHeadlightsOn", "leftTurnSignalOn", 
+							"rightTurnSignalOn", "daytimeRunningLightsOn", "reverseLightOn", 
+							"fogLightOn", "parkingLightsOn"};
+
+	for(int i=0;i<8;i++) {
+		if(extLights & (1 << (7 - i))) {
+			if(extLightsStr.length()!=0) {
+				extLightsStr += ",";
+			}
+			extLightsStr += bitnames[i];
+		}
+	}
+
+	return extLightsStr;
+}

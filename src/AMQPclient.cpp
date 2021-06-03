@@ -123,11 +123,54 @@ AMQPClient::on_message(proton::delivery &d, proton::message &msg) {
 		vehdata.speed_ms = decoded_cam->cam.camParameters.highFrequencyContainer.choice.basicVehicleContainerHighFrequency.speed.speedValue/100.0;
 		vehdata.gnTimestamp = decodedData.gnTimestamp;
 		vehdata.stationID = stationID; // It is very important to save also the stationID
+		vehdata.camTimestamp = static_cast<long>(decoded_cam->cam.generationDeltaTime);
+
+		if(decoded_cam->cam.camParameters.highFrequencyContainer.choice.basicVehicleContainerHighFrequency.vehicleWidth != VehicleWidth_unavailable) {
+			vehdata.vehicleWidth = ldmmap::OptionalDataItem<long>(decoded_cam->cam.camParameters.highFrequencyContainer.choice.basicVehicleContainerHighFrequency.vehicleWidth);
+		} else {
+			vehdata.vehicleWidth = ldmmap::OptionalDataItem<long>(false);
+		}
+
+		if(decoded_cam->cam.camParameters.highFrequencyContainer.choice.basicVehicleContainerHighFrequency.vehicleLength.vehicleLengthValue != VehicleLengthValue_unavailable) {
+			vehdata.vehicleLength = ldmmap::OptionalDataItem<long>(decoded_cam->cam.camParameters.highFrequencyContainer.choice.basicVehicleContainerHighFrequency.vehicleLength.vehicleLengthValue);
+		} else {
+			vehdata.vehicleLength = ldmmap::OptionalDataItem<long>(false);
+		}
+
+		// Manage the low frequency container data
+		// Check if this CAM contains the low frequency container
+		// If yes, store the exterior lights status
+		// If not, check if an older information about the exterior lights of the current vehicle already exist in the database (using m_db_ptr->lookup()),
+		// if this data exists, use this data, if not, just set the exterior lights information as unavailable
+		if(decoded_cam->cam.camParameters.lowFrequencyContainer!=NULL) {
+			// In any normal, uncorrupted CAM, buf should never be NULL and it should contain at least one element (i.e. buf[0] always exists)
+			if(decoded_cam->cam.camParameters.lowFrequencyContainer->choice.basicVehicleContainerLowFrequency.exteriorLights.buf!=NULL) {
+				vehdata.exteriorLights = ldmmap::OptionalDataItem<uint8_t>(decoded_cam->cam.camParameters.lowFrequencyContainer->choice.basicVehicleContainerLowFrequency.exteriorLights.buf[0]);
+			} else {
+				// Data from a corrupted decoded CAM is considered as unavailable, for the time being
+				vehdata.exteriorLights = ldmmap::OptionalDataItem<uint8_t>(false);
+			}
+		} else {
+			ldmmap::LDMMap::returnedVehicleData_t retveh;
+
+			if(m_db_ptr->lookup(stationID,retveh)==ldmmap::LDMMap::LDMMAP_OK) {
+				vehdata.exteriorLights = retveh.vehData.exteriorLights;
+			} else {
+				vehdata.exteriorLights = ldmmap::OptionalDataItem<uint8_t>(false);
+			}
+		}
 
 		db_retval=m_db_ptr->insert(vehdata);
 
 		if(db_retval!=ldmmap::LDMMap::LDMMAP_OK && db_retval!=ldmmap::LDMMap::LDMMAP_UPDATED) {
 			std::cerr << "Warning! Insert on the database for vehicle " << (int) stationID << "failed!" << std::endl;
+		}
+
+		// If a trigger manager has been enabled, check if any triggering condition has occurred (for the time being, only a simple trigger manager based on turn indicators has been developed)
+		if(m_indicatorTrgMan_enabled == true && vehdata.exteriorLights.isAvailable()) {
+			if(m_indicatorTrgMan.checkAndTrigger(lat,lon,stationID,vehdata.exteriorLights.getData()) == false) {
+				std::cerr << "Warning! A triggering condition was detected but an error occurred and no data could be sent to other services!" << std::endl;
+			}
 		}
 
 		ASN_STRUCT_FREE(asn_DEF_CAM,decoded_cam);

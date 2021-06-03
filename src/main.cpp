@@ -58,6 +58,8 @@ void *DBcleaner_callback(void *arg) {
 		std::cerr << "[WARN] Database cleaner terminated due to error." << std::endl;
 	}
 
+	close(clockFd);
+
 	pthread_exit(nullptr);
 }
 
@@ -112,6 +114,8 @@ void *VehVizUpdater_callback(void *arg) {
 	if(terminatorFlag == true) {
 		std::cerr << "[WARN] Vehicle visualizer updater terminated due to error." << std::endl;
 	}
+
+	close(clockFd);
 
 	pthread_exit(nullptr);
 }
