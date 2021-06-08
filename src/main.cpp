@@ -208,10 +208,20 @@ int main(int argc, char **argv) {
 
 	unsigned char *ptr = &cam[0];
 
+	// Sample DENM from byte array
+	uint8_t denm2_bytes[190];
+	std::string denm2_content="11000501204001800086020040EE000014008CFDF01F6D075DE0B1E41B5EA6B506950D1386B801FB1B5EA82D06950FAB01F400000000000007D200000201F01F6D07C7780FB68380020F6BBC1679E3DAEF059E7D103912D71DEE1AB0C80C80001E0788600050141090230D483C7F84826FE283F302C67000C77ECD1F77563380080BF658FBBE31920040DFB297DDF18CE0020AFD96BEEF6C64801037EC89F77663380080BF642FBBB319C00415FB2E7DE318CE00202FD983EF1AC6700102";
+	
+	for (unsigned int i = 0; i < denm2_content.length(); i += 2) {
+		std::string byteString = denm2_content.substr(i, 2);
+		uint8_t byte = (uint8_t) strtol(byteString.c_str(), nullptr, 16);
+		denm2_bytes[i/2] = byte;
+	}
+
 	etsiDecoder::decoderFrontend decodeFrontend;
 	etsiDecoder::etsiDecodedData_t decodedData;
 
-	if(decodeFrontend.decodeEtsi(ptr, sizeof(cam), decodedData)!=ETSI_DECODER_OK) {
+	if(decodeFrontend.decodeEtsi((uint8_t *)&denm2_bytes[0], 190, decodedData)!=ETSI_DECODER_OK) {
 		std::cerr << "Error! Cannot decode ETSI packet!" << std::endl;
 	}
 

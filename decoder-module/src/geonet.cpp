@@ -54,11 +54,13 @@ namespace etsiDecoder {
 
         //Basic Header Procesing according to ETSI EN 302 636-4-1 [10.3.3]
         //1)Check version field
-        if(basicH.GetVersion() != m_GnPtotocolVersion)
+        if(basicH.GetVersion() != m_GnPtotocolVersion && basicH.GetVersion() != 0)
         {
             std::cerr<< "[ERROR] [Decoder] Incorrect version of GN protocol" << std::endl;
             return GN_VERSION_ERROR;
 
+        } else if(basicH.GetVersion() == 0) {
+            std::cerr<< "[WARN] [Decoder] Unexpected GeoNetworking version \"0\"" << std::endl;
         }
         //2)Check NH field
         if(basicH.GetNextHeader()==2) //a) if NH=0 or NH=1 proceed with common header procesing
@@ -101,7 +103,7 @@ namespace etsiDecoder {
                   }
                 break;
             default:
-                std::cerr << "[ERROR] [Decoder] GeoNet packet not supported" << std::endl;
+                std::cerr << "[ERROR] [Decoder] GeoNet packet not supported. GNType: " << static_cast<unsigned int>(dataIndication->GNType) << std::endl;
                 return GN_TYPE_ERROR;
         }
         return GN_OK;
