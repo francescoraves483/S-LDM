@@ -23,6 +23,11 @@ extern "C" {
 // Global atomic flag to terminate all the threads in case of errors
 std::atomic<bool> terminatorFlag;
 
+typedef struct vizOptions {
+	ldmmap::LDMMap *db_ptr;
+	options_t *opts_ptr;
+} vizOptions_t;
+
 void *DBcleaner_callback(void *arg) {
 	// Get the pointer to the database
 	ldmmap::LDMMap *db_ptr = static_cast<ldmmap::LDMMap *>(arg);
@@ -70,8 +75,10 @@ void updateVisualizer(ldmmap::vehicleData_t vehdata,void *vizObjVoidPtr) {
 }
 
 void *VehVizUpdater_callback(void *arg) {
-	// Get the pointer to the database
-	ldmmap::LDMMap *db_ptr = static_cast<ldmmap::LDMMap *>(arg);
+	// Get the pointer to the visualizer options/parameters
+	vizOptions_t *vizopts_ptr = static_cast<vizOptions_t *>(arg);
+	// Get a direct pointer to the database
+	ldmmap::LDMMap *db_ptr = vizopts_ptr->db_ptr;
 
 	// Get the central lat and lon values stored in the DB
 	std::pair<double,double> centralLatLon= db_ptr->getCentralLatLon();
@@ -82,7 +89,10 @@ void *VehVizUpdater_callback(void *arg) {
 	// Start the node.js server and perform an initial connection with it
 	vehicleVisObj.startServer();
 	vehicleVisObj.connectToServer ();
-	vehicleVisObj.sendMapDraw(centralLatLon.first, centralLatLon.second);
+	vehicleVisObj.sendMapDraw(centralLatLon.first, centralLatLon.second,
+		vizopts_ptr->opts_ptr->min_lat,vizopts_ptr->opts_ptr->min_lon,
+		vizopts_ptr->opts_ptr->max_lat,vizopts_ptr->opts_ptr->max_lon,
+		vizopts_ptr->opts_ptr->ext_lat_factor,vizopts_ptr->opts_ptr->ext_lon_factor);
 
 	// Create a new timer
 	struct pollfd pollfddata;
@@ -315,16 +325,18 @@ int main(int argc, char **argv) {
 	// the vehicleVisualizer
 	// pthread_attr_init(&tattr);
 	// pthread_attr_setdetachstate(&tattr,PTHREAD_CREATE_DETACHED);
-	pthread_create(&vehviz_tid,NULL,VehVizUpdater_callback,(void *) db_ptr);
+	vizOptions_t vizParams = {db_ptr,&sldm_opts};
+	pthread_create(&vehviz_tid,NULL,VehVizUpdater_callback,(void *) &vizParams);
 	// pthread_attr_destroy(&tattr);
 
 	// Start the AMQP client event loop (for the time being, on loopback, but some options will be added in the future)
 	try {
 		std::string conn_url = argc > 1 ? argv[1] : "127.0.0.1:5672";
-		std::string addr = argc > 2 ? argv[2] : "examples";
+		std::string addr = argc > 2 ? argv[2] : "topic://5gcarmen.examples";
 
 
-		AMQPClient recvClient("127.0.0.1:5672", "examples", sldm_opts.min_lat, sldm_opts.max_lat, sldm_opts.min_lon, sldm_opts.max_lon, 16, &sldm_opts, db_ptr);
+		AMQPClient recvClient("127.0.0.1:5672", "topic://5gcarmen.examples", sldm_opts.min_lat, sldm_opts.max_lat, sldm_opts.min_lon, sldm_opts.max_lon, 16, &sldm_opts, db_ptr);
+		recvClient.setIndicatorTriggerManager(true);
 		proton::container(recvClient).run();
 
 		return 0;

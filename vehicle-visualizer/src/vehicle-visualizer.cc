@@ -111,6 +111,38 @@ vehicleVisualizer::sendMapDraw(double lat, double lon)
 	return send_rval;
 }
 
+int 
+vehicleVisualizer::sendMapDraw(double lat, double lon, double minlat, double minlon, double maxlat, double maxlon, double lat_ext_factor, double lon_ext_factor)
+{
+	if(m_is_connected==false) {
+		std::cerr<<"Error: attempted to use a non-connected vehicle visualizer client."<<std::endl;
+		exit(EXIT_FAILURE);
+	}
+
+	if(m_is_map_sent==true) {
+		std::cerr<<"Error in vehicle visualizer client: attempted to send twice a map draw message. This is not allowed."<<std::endl;
+		exit(EXIT_FAILURE);
+	}
+
+	std::ostringstream oss;
+	int send_rval=-1;
+
+	oss.precision(7);
+	oss<<"map_areas,"<<lat<<","<<lon<<","<<minlat<<","<<minlon<<","<<maxlat<<","<<maxlon<<","<<lat_ext_factor<<","<<lon_ext_factor;
+
+	std::string msg_string = oss.str();
+	char *msg_buffer = new char[msg_string.length() + 1];
+	std::copy(msg_string.c_str(), msg_string.c_str() + msg_string.length() + 1, msg_buffer);
+
+	send_rval=send(m_sockfd,msg_buffer,msg_string.length()+1,0);
+
+	delete[] msg_buffer;
+
+	m_is_map_sent=true;
+
+	return send_rval;
+}
+
 int
 vehicleVisualizer::sendObjectUpdate(std::string objID, double lat, double lon, double heading)
 {

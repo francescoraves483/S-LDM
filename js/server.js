@@ -88,6 +88,17 @@ udpSocket.on('message', (msg,rinfo) => {
             console.log("VehicleVisualizer: Map draw message received from the S-LDM.");
             mapmsg = msg.toString() + "," + mapbox_token;
         }
+    } else if(msg_fields[0] === "map_areas") {
+        if (msg_fields.length !== 9) {
+            console.error("Error: received a corrupted map draw message from the S-LDM (map_areas type).");
+            process.exit(1);
+        } else if(msg_fields.length === 9 && mapmsg != null) {
+            console.error("Error: received twice a map draw message from the S-LDM. This is not allowed");
+            process.exit(1);
+        } else {
+            console.log("VehicleVisualizer: Map draw message received from the S-LDM.");
+            mapmsg = msg.toString() + "," + mapbox_token;
+        }
     // If a "terminate" message is received from the S-LDM, just close the server
     } else if(msg_fields[0] === "terminate") {
         // This message is sent to terminate the Node.js server

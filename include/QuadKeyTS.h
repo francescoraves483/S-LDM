@@ -27,6 +27,7 @@ namespace QuadKeys
         	// and reduce the size of the filter
         	// The input vector is passed by reference and it is thus modified by unifyQuadkeys()
     		void unifyQuadkeys(std::vector<std::string> &quadKeys);
+            void checkdim(std::vector<std::string> &quadKeys);
     };
 }
 

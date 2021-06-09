@@ -5,6 +5,9 @@
  * The server->client communication is realized thanks to socket.io.
  */
 
+// Constant for unavailable coordinates values
+const VIS_LONLAT_INVALID = -80000;
+
 // Constant for an unavailable heading value (VIS_HEADING_INVALID)
 const VIS_HEADING_INVALID = 361;
 
@@ -56,6 +59,32 @@ socket.on('message', (msg) => {
 		let msg_fields = msg.split(",");
 
 		switch (msg_fields[0]) {
+			// "map areas draw" message: "map_areas,<lat>,<lon>,<minlat>,<minlon>,<maxlat>,<maxlon>,<lat_ext_factor>,<lon_ext_factor>,<mapbox token>"
+			case 'map_areas':
+				if (map_rx === false) {
+					if (msg_fields.length !== 10) {
+						console.error("VehicleVisualizer: Error: received a corrupted map draw message from the server (map_areas type)");
+					} else {
+						console.info("VehicleVisualizer: The map will be drawn centered at: ", msg_fields[1], msg_fields[2]);
+						console.info("VehicleVisualizer: displayed area: [",msg_fields[3],",",msg_fields[4],"],[",msg_fields[5],",",msg_fields[6],"]");
+						document.getElementById('statusid').innerHTML = '';
+						let mapbox_token;
+
+						console.log(msg_fields[3]);
+
+						if(msg_fields[9] != "none") {
+							mapbox_token = msg_fields[9];
+						} else {
+							mapbox_token = null;
+						}
+						leafletmap = draw_map(parseFloat(msg_fields[1]), parseFloat(msg_fields[2]), parseFloat(msg_fields[3]), 
+							parseFloat(msg_fields[4]), parseFloat(msg_fields[5]), parseFloat(msg_fields[6]), 
+							parseFloat(msg_fields[7]), parseFloat(msg_fields[8]), mapbox_token);
+						map_rx = true;
+					}
+				}
+				break;
+
 			// "map draw" message: "map,<lat>,<lon>,<mapbox token>"
 			case 'map':
 				if (map_rx === false) {
@@ -73,7 +102,9 @@ socket.on('message', (msg) => {
 						} else {
 							mapbox_token = null;
 						}
-						leafletmap = draw_map(parseFloat(msg_fields[1]), parseFloat(msg_fields[2]), mapbox_token);
+						leafletmap = draw_map(parseFloat(msg_fields[1]), parseFloat(msg_fields[2]), VIS_LONLAT_INVALID, 
+							VIS_LONLAT_INVALID, VIS_LONLAT_INVALID, VIS_LONLAT_INVALID, 
+							VIS_LONLAT_INVALID, VIS_LONLAT_INVALID, mapbox_token);
 						map_rx = true;
 					}
 				}
@@ -162,7 +193,7 @@ function update_marker(mapref,id,lat,lon,heading)
 
 // This function is used to draw the whole map at the beginning, on which vehicles will be placed
 // It expects as arguments the lat and lon value where the map should be centered
-function draw_map(lat,lon,mapbox_token) {
+function draw_map(lat,lon,minlat,minlon,maxlat,maxlon,lat_ext_factor,lon_ext_factor,mapbox_token) {
 	let standardlayer;
 
 	// If no Mapbox token is specified, create a basic view layer based on OpenStreetMap (occasional use only! Heavy usage is forbidden!)
@@ -228,6 +259,14 @@ function draw_map(lat,lon,mapbox_token) {
 		L.control.layers(basemaps).addTo(mymap);
 
 		console.log("A Mapbox token has been specified. Multiple layers will be available.")
+	}
+
+	if(minlat!==VIS_LONLAT_INVALID && minlon!==VIS_LONLAT_INVALID && maxlat!==VIS_LONLAT_INVALID && maxlon!==VIS_LONLAT_INVALID) {
+		L.rectangle([[minlat,minlon],[maxlat,maxlon]], {color: 'red', fill: false}).addTo(mymap);
+
+		if(lat_ext_factor!==VIS_LONLAT_INVALID && lon_ext_factor!==VIS_LONLAT_INVALID) {
+			L.rectangle([[minlat-lat_ext_factor,minlon-lon_ext_factor],[maxlat+lat_ext_factor,maxlon+lon_ext_factor]], {color: 'green', fill: false}).addTo(mymap);
+		}
 	}
 
 	// Print on the console that the map has been successfully rendered

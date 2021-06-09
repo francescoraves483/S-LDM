@@ -29,7 +29,7 @@ void *RESTthread_callback (void *arg) {
 	http::reason_phrase reason_phrase_ret;
 
 	// Send 1 request every timems milliseconds until the server sends a reply containing the STOP in the JSON field "rsp_type"
-	timer_fd_create(pollfddata, clockFd, restObj->getPeriodicInterval()*1000.0);
+	timer_fd_create(pollfddata, clockFd, restObj->getPeriodicInterval()*1000000.0);
 
 	POLL_DEFINE_JUNK_VARIABLE();
 

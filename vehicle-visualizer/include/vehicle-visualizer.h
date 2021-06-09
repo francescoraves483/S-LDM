@@ -41,8 +41,8 @@ class vehicleVisualizer
 
 		// Send a "map draw" message to tell the server where the client (i.e. the web browser) should center the map at
 		// This function should always be called once before calling sendObjectUpdate()
-		// Normally, it is automatically called inside TraCI or GPS-tc
 		int sendMapDraw(double lat, double lon);
+		int sendMapDraw(double lat, double lon, double minlat, double minlon, double maxlat, double maxlon, double lat_ext_factor, double lon_ext_factor);
 
 		// These functions will update the position on the map of the object with unique id "objID" (the vehicle ID can be used here, for instance)
 		// If the object does not exist yet on the map, it will be first added

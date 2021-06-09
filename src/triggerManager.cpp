@@ -10,7 +10,8 @@ bool indicatorTriggerManager::checkAndTrigger(double lat, double lon, uint64_t r
 
 	// 5 = 7 - 2 is used to check bit 2, i.e. if "leftTurnSignalOn" is set
 	// 4 = 7 - 3 is used to check bit 3, i.e. if "rightTurnSignalOn" is set
-	if(exteriorLightsStatus & (1 << (7 - 2)) || exteriorLightsStatus & (1 << (7 - 3))) {
+	// if(exteriorLightsStatus & (1 << 5) || exteriorLightsStatus & (1 << 4)) {
+	if(exteriorLightsStatus & (1 << 4)) {
 		// Avoid triggering multiple times for the same vehicle
 		if(std::find(m_already_triggered.begin(), m_already_triggered.end(), refVehStationID) == m_already_triggered.end()) {
 			ManeuveringServiceRestClient *ms_restclient = new(std::nothrow) ManeuveringServiceRestClient(lat,lon,refVehStationID,m_db_ptr);

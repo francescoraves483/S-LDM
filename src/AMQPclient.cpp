@@ -41,6 +41,8 @@ AMQPClient::on_container_start(proton::container &c) {
 	//LevelOfDetail set into the tilesys class as private variables
 	tilesys.setLevelOfDetail(levelOfdetail);
 
+	std::cout << "STARTED!" << std::endl;
+
 	//here we get the vector containing all the quadkeys in the range at a given level of detail
 	quadKeys = tilesys.LatLonToQuadKeyRange(min_latitude, max_latitude, min_longitude, max_longitude);
 	//Quadkeys unifier algorithm
@@ -58,6 +60,8 @@ AMQPClient::on_container_start(proton::container &c) {
 			s.insert(s.length(), " OR ");
 		}
 	}
+
+	std::cout << "OK!" << std::endl;
 
 	// Set the AMQP filter
 	set_filter(opts, s);
@@ -168,8 +172,8 @@ AMQPClient::on_message(proton::delivery &d, proton::message &msg) {
 
 		// If a trigger manager has been enabled, check if any triggering condition has occurred (for the time being, only a simple trigger manager based on turn indicators has been developed)
 		if(m_indicatorTrgMan_enabled == true && vehdata.exteriorLights.isAvailable()) {
-			if(m_indicatorTrgMan.checkAndTrigger(lat,lon,stationID,vehdata.exteriorLights.getData()) == false) {
-				std::cerr << "Warning! A triggering condition was detected but an error occurred and no data could be sent to other services!" << std::endl;
+			if(m_indicatorTrgMan.checkAndTrigger(lat,lon,stationID,vehdata.exteriorLights.getData()) == true) {
+				std::cout << "[TRIGGER] Triggering condition detected!" << std::endl;
 			}
 		}
 
