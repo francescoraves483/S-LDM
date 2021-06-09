@@ -1,3 +1,4 @@
 # Compiled binary
 /SLDM
 /obj
+/tester/UDP-AMQP-relayer/obj
