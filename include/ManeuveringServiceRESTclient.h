@@ -12,8 +12,11 @@
 
 class ManeuveringServiceRestClient {
 	public:
-		ManeuveringServiceRestClient(double lat, double lon, uint64_t refVehStationID, ldmmap::LDMMap *db_ptr) :
-			 m_range_m(m_range_m_default), m_db_ptr(db_ptr), m_lat(lat), m_lon(lon), m_refVehStationID(refVehStationID), m_notify_fcn(nullptr) {m_thread_running=false; m_srv_addr="http://localhost"; m_port=8000;};
+		// ManeuveringServiceRestClient(double lat, double lon, uint64_t refVehStationID, ldmmap::LDMMap *db_ptr) :
+		// 	 m_range_m(m_range_m_default), m_db_ptr(db_ptr), m_lat(lat), m_lon(lon), m_refVehStationID(refVehStationID), m_notify_fcn(nullptr) {m_thread_running=false; m_srv_addr="http://localhost"; m_port=8000;};
+
+		ManeuveringServiceRestClient(uint64_t refVehStationID, ldmmap::LDMMap *db_ptr) :
+			m_range_m(m_range_m_default), m_db_ptr(db_ptr), m_refVehStationID(refVehStationID), m_notify_fcn(nullptr) {m_thread_running=false; m_srv_addr="http://localhost"; m_port=8000;};
 
 		void setNotifyFunction(std::function<void(uint64_t)> notify_fcn) {m_notify_fcn = notify_fcn;}
 		void inline callNotifyFunction(void);
@@ -57,8 +60,9 @@ class ManeuveringServiceRestClient {
 		long m_port;
 		double m_interval_sec = 1.0;
 
-		double m_lat = 0.0;
-		double m_lon = 0.0;
+		// Not needed, as the rangeSelect() on the database is performed based on the stationID and not on a fixed point
+		// double m_lat = 0.0;
+		// double m_lon = 0.0;
 
 		uint64_t m_refVehStationID;
 

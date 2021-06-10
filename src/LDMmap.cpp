@@ -137,6 +137,19 @@ namespace ldmmap
 		return LDMMAP_OK;
 	}
 
+	LDMMap::LDMMap_error_t 
+	LDMMap::rangeSelect(double range_m, uint64_t stationID, std::vector<returnedVehicleData_t> &selectedVehicles) {
+		returnedVehicleData_t retData;
+
+		// Get the latitude and longitude of the speficied vehicle
+		if(lookup(stationID,retData)!=LDMMAP_OK) {
+			return LDMMAP_ITEM_NOT_FOUND;
+		}
+
+		// Perform a rangeSelect() centered on that latitude and longitude values
+		return rangeSelect(range_m,retData.vehData.lat,retData.vehData.lon,selectedVehicles);
+	}
+
 	void 
 	LDMMap::deleteOlderThan(double time_milliseconds) {
 		uint64_t now = get_timestamp_us();

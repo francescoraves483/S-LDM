@@ -46,6 +46,10 @@ namespace ldmmap {
 	    	// For the time being, this function should always return LDMMAP_OK (i.e. to understand if no vehicles are returned, 
 	    	// you should check the size of the selectedVehicles vector)
 	    	LDMMap_error_t rangeSelect(double range_m, double lat, double lon, std::vector<returnedVehicleData_t> &selectedVehicles);
+	    	// This function is the same as the other method with the same name, but it will return all the vehicles around another
+	    	// vehicle (which is also included in the returned vector), given it stationID
+	    	// This function may return LDMMAP_ITEM_NOT_FOUND if the specified stationID is not stored inside the database
+	    	LDMMap_error_t rangeSelect(double range_m, uint64_t stationID, std::vector<returnedVehicleData_t> &selectedVehicles);
 	    	// This function deletes from the database all the entries older than time_milliseconds ms
 	    	// The entries are deleted if their age is > time_milliseconds ms if greater_equal == false, 
 	    	// or >= time_milliseconds ms if greater_equal == true

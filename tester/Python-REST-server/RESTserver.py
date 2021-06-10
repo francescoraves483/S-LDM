@@ -36,6 +36,9 @@ class sampleserver(tornado.web.RequestHandler):
 
 		print("Estimated client->server latency: "+str(now/1e6-json_data["generation_tstamp"]/1e3)+" ms");
 
+		print("JSON content: ");
+		print(json.dumps(json_data,indent=2,sort_keys=False));
+
 		# print("--------------")
 
 		json_response = {

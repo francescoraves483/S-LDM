@@ -71,5 +71,9 @@ std::string exteriorLights_bit_to_string(uint8_t extLights) {
 		}
 	}
 
+	if(extLightsStr=="") {
+		extLightsStr="off";
+	}
+
 	return extLightsStr;
 }

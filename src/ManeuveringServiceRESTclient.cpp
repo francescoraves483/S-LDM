@@ -96,11 +96,9 @@ web::json::value ManeuveringServiceRestClient::make_SLDM_json(int eventID) {
 	sldm_json["generation_tstamp"] = web::json::value::number(get_timestamp_us());
 	sldm_json["eventID"] = MAKE_NUM(eventID);
 	sldm_json["event"] = MAKE_STR("CLC");
-	sldm_json["reference_lat_deg"] = MAKE_NUM(m_lat);
-	sldm_json["reference_lon_deg"] = MAKE_NUM(m_lon);
 	sldm_json["reference_vehicle_ID"] = MAKE_NUM(m_refVehStationID);
 
-	if(m_db_ptr->rangeSelect(m_range_m,m_lat,m_lon,returnedvehs)!=ldmmap::LDMMap::LDMMAP_OK) {
+	if(m_db_ptr->rangeSelect(m_range_m,m_refVehStationID,returnedvehs)!=ldmmap::LDMMap::LDMMAP_OK) {
 		sldm_json["error"] = MAKE_STR("ERROR");
 	} else {
 		sldm_json["error"] = MAKE_STR("OK");

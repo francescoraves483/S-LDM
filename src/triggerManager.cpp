@@ -14,7 +14,11 @@ bool indicatorTriggerManager::checkAndTrigger(double lat, double lon, uint64_t r
 	if(exteriorLightsStatus & (1 << 4)) {
 		// Avoid triggering multiple times for the same vehicle
 		if(std::find(m_already_triggered.begin(), m_already_triggered.end(), refVehStationID) == m_already_triggered.end()) {
-			ManeuveringServiceRestClient *ms_restclient = new(std::nothrow) ManeuveringServiceRestClient(lat,lon,refVehStationID,m_db_ptr);
+			// This constructor for the Maneuvering Service REST client is no more available as the database should be read
+			// with a given stationID as reference (i.e., generating the context around a moving vehicle), and not considering
+			// a fixed (lat,lon) central point
+			// ManeuveringServiceRestClient *ms_restclient = new(std::nothrow) ManeuveringServiceRestClient(lat,lon,refVehStationID,m_db_ptr);
+			ManeuveringServiceRestClient *ms_restclient = new(std::nothrow) ManeuveringServiceRestClient(refVehStationID,m_db_ptr);
 
 			if(ms_restclient!=nullptr) {
 				ms_restclient->setNotifyFunction(std::bind(&indicatorTriggerManager::notifyOpTermination,this,std::placeholders::_1));
