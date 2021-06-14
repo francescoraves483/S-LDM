@@ -132,7 +132,7 @@ namespace QuadKeys
 			quadKey << digit;
 		}
 
-		std::cout<<"sto inviando: "<<quadKey.str()<<std::endl;
+		std::cout<<"[LatLonToQuadKey]: Sending: "<<quadKey.str()<<std::endl;
 		return quadKey.str();
 	}
 
@@ -142,7 +142,6 @@ namespace QuadKeys
 		//std::cout<<"\nCurrent variation: "<<m_latlon_variation<<"\nCurrent levelOfDetail: "<<m_levelOfDetail<<std::endl;
 		std::string quadKey;
 		std::vector<std::string> v = {};
-		// std::ofstream file("cachefile.txt");
 
 		//starting scan the lan_lon using the private attribute m_latlon_variation
 		for(double j = min_latitude; j <= max_latitude; j+=m_latlon_variation){
@@ -207,19 +206,13 @@ namespace QuadKeys
             }
         }
 
+        // Commented as it is intended only for debug purposes
+        // firstvec.txt contains the initial vector of Quadkey
 		// std::ofstream fout("firstvec.txt");
 		//  for(int i = 0; i<v.size(); i++){
 		//  	 fout << v.at(i) << "\n";
 		//  }
 		//  fout.close();
-
-		std::cout << "[QUADKEYS] Area defined in quadkeys" << std::endl;
-
-		//Generate cache file
-		// if(file.is_open()) {
-		// 	file << min_latitude << "\n" <<max_latitude << "\n" <<min_longitude << "\n" <<max_longitude << "\n" ;
-		// 	file.close();
-		// }
 		
 		return v;
 	}
@@ -312,7 +305,8 @@ namespace QuadKeys
 
 		//std::cout<<"Vector erased, checking dimension: "<< total + 21*(vf.size()-1) + 17 + 180 <<std::endl; //21 chars are added for every vector's string, while for the last one 17 chars are added insted. 180 is the offset btw the computed size and the one given by the error.
 
-        //std::cout<<"Vector erased"<<std::endl;
+        // This is commented as these lines of code are just intended for debug purposes
+        // midvec.txt contains the Quadkey vector content after the unify phase
         // std::ofstream fout("midvec.txt");
         // for(int i = 0; i < quadKeys.size(); i++){
         //     fout << quadKeys.at(i) << "\n";
@@ -322,8 +316,8 @@ namespace QuadKeys
 
 	void QuadKeyTS::checkdim(std::vector<std::string> &quadKeys) {
         std::vector<std::string> vf = quadKeys;
-		const int max_length = 100000; //131072; //222; maximum length in byte to transfer infos to the broker
-		int l = m_levelOfDetail; //5;
+		const int max_length = 7000; // 131072; // 222; maximum length in byte to transfer infos to the broker
+		unsigned int l = m_levelOfDetail; // 5;
 		//int vec_len = vf.size();
         std::cout<<"[QUADKEYS] Checking dimensions: "<<std::accumulate(vf.begin(), vf.end(), -4, [](int sum, const std::string& elem) {return sum + elem.size() + 21;}) + 180<<std::endl;
 		while(std::accumulate(vf.begin(), vf.end(), -4, [](int sum, const std::string& elem) {return sum + elem.size() + 21;}) + 180 >= max_length ){
@@ -344,9 +338,9 @@ namespace QuadKeys
             }
             else{
 
-            	for (size_t j = 0; j < vf.size(); j++){
+            	for (size_t j = 0; j < vf.size(); j++) {
 
-                    if(vf.at(j).size() ==  l){
+                    if(vf.at(j).size() ==  l) {
                         //std::cout<<"found"<<vf.at(j).size() <<std::endl;
                         flag++;
                         vf.push_back(vf.at(j).substr(0,l-1));
@@ -362,7 +356,9 @@ namespace QuadKeys
 
 		    std::cout<<"[QUADKEYS] New dimension: "<< std::accumulate(vf.begin(), vf.end(), -4, [](int sum, const std::string& elem) {return sum + elem.size() + 21;}) + 180 <<std::endl;
 
-		    if(l<0){break;}
+		    if(l<0) {
+		    	break;
+		    }
 		}
 
 		//QuadKeyTS::unifyQuadkeys(vf);
@@ -379,24 +375,13 @@ namespace QuadKeys
 		
 		quadKeys = vf;
 
+		// This is commented as it is intended only for debug purposes
+		// lastvec.txt contains the final Quadkey vector content after the size reduction phase (if it happens)
 		//std::cout<<"\nFinished\n";
         // std::ofstream fout("lastvec.txt");
         // for(int i = 0; i < quadKeys.size(); i++){
         //     fout << quadKeys.at(i) << "\n";
         // }
         // fout.close();
-
-		//Generate a cache file
-		// std::ofstream file;
-		// file.open("cachefile.txt", std::ios::app);
-		// if(file.is_open()){
-		// 	for(int i = 0; i < vf.size(); i++){
-		// 		file << vf.at(i) << "\n";
-		// 	}
-		// 	file.close();
-  //       }
-
-		// std::cout<<"\n[QUADKEYS] Finished: Cache file created\n";
-
 	}
 }

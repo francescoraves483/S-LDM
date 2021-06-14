@@ -77,3 +77,8 @@ std::string exteriorLights_bit_to_string(uint8_t extLights) {
 
 	return extLightsStr;
 }
+
+
+bool doublecomp(double d1, double d2, double eps) {
+	return std::abs(d1-d2) < eps;
+}

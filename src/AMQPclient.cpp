@@ -1,5 +1,7 @@
 #include "AMQPclient.h"
 #include "QuadKeyTS.h"
+#include "utils.h"
+#include <fstream>
 
 extern "C" {
 	#include "CAM.h"
@@ -35,36 +37,132 @@ AMQPClient::on_container_start(proton::container &c) {
 	proton::source_options opts;
 	QuadKeys::QuadKeyTS tilesys;
 	std::vector<std::string> quadKeys;
+	std::vector<std::string> fromfile;
 
-	// std::ofstream fout("finalvec.txt");
+	/* First version of the code without the caching mechanism. Kept here for reference. */
+	/*
+		//LevelOfDetail set into the tilesys class as private variables
+		tilesys.setLevelOfDetail(levelOfdetail);
 
-	//LevelOfDetail set into the tilesys class as private variables
-	tilesys.setLevelOfDetail(levelOfdetail);
+		std::cout << "[AMQP Client] Quadkey algoritm started." << std::endl;
 
-	std::cout << "STARTED!" << std::endl;
+		//here we get the vector containing all the quadkeys in the range at a given level of detail
+		quadKeys = tilesys.LatLonToQuadKeyRange(min_latitude, max_latitude, min_longitude, max_longitude);
+		//Quadkeys unifier algorithm
+		tilesys.unifyQuadkeys(quadKeys);
 
-	//here we get the vector containing all the quadkeys in the range at a given level of detail
-	quadKeys = tilesys.LatLonToQuadKeyRange(min_latitude, max_latitude, min_longitude, max_longitude);
-	//Quadkeys unifier algorithm
-	tilesys.unifyQuadkeys(quadKeys);
+		//Here we create a string to pass to the filter (SQL like)
+		std::string s;
 
-	//Here we create a string to pass to the filter (SQL like)
-	std::string s;
-
-	for(size_t i = 0; i < quadKeys.size(); i++) {
-		s.insert(s.length(), "quadkeys LIKE ''");
-		//l = s.length() - 1;
-		s.insert(s.length() - 1, quadKeys.at(i));
-		s.insert(s.length() - 1, "%");
-		if(i < quadKeys.size()-1){
-			s.insert(s.length(), " OR ");
+		for(size_t i = 0; i < quadKeys.size(); i++) {
+			s.insert(s.length(), "quadkeys LIKE ''");
+			//l = s.length() - 1;
+			s.insert(s.length() - 1, quadKeys.at(i));
+			s.insert(s.length() - 1, "%");
+			if(i < quadKeys.size()-1){
+				s.insert(s.length(), " OR ");
+			}
 		}
+
+		std::cout << "[AMQP Client] Quadkey algoritm correctly terminated." << std::endl;
+
+		// Set the AMQP filter
+		set_filter(opts, s);
+	*/
+
+	std::string line;
+	bool cache_file_found = false;
+	std::ifstream ifile("cachefile.sldmc");
+
+	if(ifile.is_open()) {
+		std::cout<<"[AMQPClient] Cache file available: reading the parameters..."<< std::endl;
+
+		while(getline(ifile, line)) {
+			fromfile.push_back(line);
+		}
+
+		double minlatff = stod(fromfile.at(0));
+		double maxlatff = stod(fromfile.at(1));
+		double minlonff = stod(fromfile.at(2));
+		double maxlonff = stod(fromfile.at(3));
+
+		/*fprintf(stdout,"From File we get max_latitude: %.40lf\n",maxlatff);
+		fprintf(stdout,"Actual max_latitude parameter%.40lf\n",max_latitude);
+		fprintf(stdout,"From File we get min_latitude: %.40lf\n",minlatff);
+		fprintf(stdout,"Actual min_latitude parameter%.40lf\n",min_latitude);*/
+
+		if(doublecomp(minlatff, min_latitude) && doublecomp(maxlatff, max_latitude) && doublecomp(minlonff, min_longitude) && doublecomp(maxlonff, max_longitude) && fromfile.size() > 4){
+			cache_file_found = true;
+		}
+	} else {
+		std::cout<<"[AMQPClient] No cache file found!"<<std::endl;
 	}
 
-	std::cout << "OK!" << std::endl;
+	ifile.close();
 
-	// Set the AMQP filter
-	set_filter(opts, s);
+	if(cache_file_found == false) {
+		std::ofstream ofile("cachefile.sldmc");
+
+		std::cout<<"[AMQPClient] New coordinates: recomputing quadkeys..."<<std::endl;
+		//LevelOfDetail set into the tilesys class as private variables
+		tilesys.setLevelOfDetail(levelOfdetail);
+		// Here we get the vector containing all the quadkeys in the range at a given level of detail
+		quadKeys = tilesys.LatLonToQuadKeyRange(min_latitude, max_latitude, min_longitude, max_longitude);
+
+		// Add the range information to the cache file
+		if(ofile.is_open()) {
+			ofile << min_latitude << "\n" << max_latitude << "\n" << min_longitude << "\n" << max_longitude << "\n";
+		}
+
+		// Quadkeys unifier algorithm
+		tilesys.unifyQuadkeys(quadKeys);
+		tilesys.checkdim(quadKeys);
+
+		// Write the computed Quadkeys to the cache file
+		std::ofstream file;
+		if(ofile.is_open()) {
+			for(size_t i = 0; i < quadKeys.size(); i++){
+				ofile << quadKeys.at(i) << "\n";
+			}
+		}
+
+		ofile.close();
+
+		std::cout<<"\n[AMQP Client] Finished: Quadkey cache file created.\n";
+
+		// Here we create a string to pass to the filter (SQL like)
+		std::string s;
+
+		for(size_t i = 0; i < quadKeys.size(); i++) {
+			s.insert(s.length(), "quadkeys LIKE ''");
+			//l = s.length() - 1;
+			s.insert(s.length() - 1, quadKeys.at(i));
+			s.insert(s.length() - 1, "%");
+			if(i < quadKeys.size()-1){
+				s.insert(s.length(), " OR ");
+			}
+		}
+
+		// Set the AMQP filter
+		set_filter(opts, s);
+	} else {
+		std::cout<<"[AMQPClient] Filter setup from a cache file... "<<std::endl;
+
+		std::string s;
+
+		for(size_t i = 4; i < fromfile.size(); i++) {
+			s.insert(s.length(), "quadkeys LIKE ''");
+			//l = s.length() - 1;
+			s.insert(s.length() - 1, fromfile.at(i));
+			s.insert(s.length() - 1, "%");
+			if(i < fromfile.size()-1){
+				s.insert(s.length(), " OR ");
+			}
+		}
+
+		// Set the AMQP filter
+		set_filter(opts, s);
+	}
 
 	proton::connection conn = c.connect(conn_url_);
 	conn.open_receiver(addr_, proton::receiver_options().source(opts));
@@ -79,11 +177,11 @@ AMQPClient::on_message(proton::delivery &d, proton::message &msg) {
 	}
 
 	proton::codec::decoder qpid_decoder(msg.body());
-    proton::binary message_bin;
-    uint8_t *message_bin_buf;
+	proton::binary message_bin;
+	uint8_t *message_bin_buf;
 
-    // Check if a binary message has been received
-    // If no binary data has been received, just ignore the current AMQP message
+	// Check if a binary message has been received
+	// If no binary data has been received, just ignore the current AMQP message
 	if(qpid_decoder.next_type () == proton::BINARY) {
 		qpid_decoder >> message_bin;
 
@@ -97,12 +195,12 @@ AMQPClient::on_message(proton::delivery &d, proton::message &msg) {
 	}
 
 	// Decode the content of the message, using the decoder-module frontend class
-    if(m_decodeFrontend.decodeEtsi(message_bin_buf, message_bin.size (), decodedData)!=ETSI_DECODER_OK) {
-    	std::cerr << "Error! Cannot decode ETSI packet!" << std::endl;
-    	return;
-    }
+	if(m_decodeFrontend.decodeEtsi(message_bin_buf, message_bin.size (), decodedData)!=ETSI_DECODER_OK) {
+		std::cerr << "Error! Cannot decode ETSI packet!" << std::endl;
+		return;
+	}
 
-    // If a CAM has been received, it should be used to update the internal in-memory database
+	// If a CAM has been received, it should be used to update the internal in-memory database
 	if(decodedData.type == etsiDecoder::ETSI_DECODED_CAM) {
 		CAM_t *decoded_cam = (CAM_t *) decodedData.decoded_msg;
 		double lat = decoded_cam->cam.camParameters.basicContainer.referencePosition.latitude/10000000.0;
