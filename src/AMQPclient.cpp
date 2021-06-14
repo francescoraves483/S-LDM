@@ -2,6 +2,7 @@
 #include "QuadKeyTS.h"
 #include "utils.h"
 #include <fstream>
+#include <iomanip>
 
 extern "C" {
 	#include "CAM.h"
@@ -111,7 +112,7 @@ AMQPClient::on_container_start(proton::container &c) {
 
 		// Add the range information to the cache file
 		if(ofile.is_open()) {
-			ofile << min_latitude << "\n" << max_latitude << "\n" << min_longitude << "\n" << max_longitude << "\n";
+			ofile << std::fixed << std::setprecision(6) << min_latitude << "\n" << max_latitude << "\n" << min_longitude << "\n" << max_longitude << "\n";
 		}
 
 		// Quadkeys unifier algorithm
