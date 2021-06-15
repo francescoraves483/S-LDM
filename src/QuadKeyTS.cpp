@@ -314,74 +314,74 @@ namespace QuadKeys
         // fout.close();
 	}
 
+	// This function is in charge of reducing the size of the filter string which will be passed to the AMQP broker to filter the messages depending on the Quadkeys
+	// This function takes as argument a reference to an array of Quadkeys and modifies it in order not to exceed max_length bytes
+	// The compression is performed by removing one character from the longest Quadkey strings, thus increasing the total area covered by all the Quadkeys
+	// The Area Filter and Decoder modules will therefore "work a bit more" when we compress more, because the Quadkey area will be a bit larger and more messages 
+	// will need to be decoded and passed to the Area Filter
+	// For the time being, the maximum filter string size is set to 100000 B, which seems to be a good compromise between the size of the filter and the amount
+	// of resulting compression when the area is very large
 	void QuadKeyTS::checkdim(std::vector<std::string> &quadKeys) {
-        std::vector<std::string> vf = quadKeys;
-		const int max_length = 7000; // 131072; // 222; maximum length in byte to transfer infos to the broker
+		std::vector<std::string> vf = quadKeys;
+		const int max_length = 100000; // 131072; // 222; maximum length in byte to transfer infos to the broker
 		unsigned int l = m_levelOfDetail; // 5;
 		//int vec_len = vf.size();
-        std::cout<<"[QUADKEYS] Checking dimensions: "<<std::accumulate(vf.begin(), vf.end(), -4, [](int sum, const std::string& elem) {return sum + elem.size() + 21;}) + 180<<std::endl;
-		while(std::accumulate(vf.begin(), vf.end(), -4, [](int sum, const std::string& elem) {return sum + elem.size() + 21;}) + 180 >= max_length ){
 
-            std::cout<<"[QUADKEYS] Dimensions exceeded, resizing:"<<std::endl;
-            int flag = 0;
-
-            if(std::accumulate(vf.begin(), vf.end(), -4, [](int sum, const std::string& elem) {return sum + elem.size() + 21;}) + 180 > (1.5*max_length)){
-                for(size_t j = 0; j < vf.size(); j++){
-
-                	if(vf.at(j).size() == l){
-                		auto it = vf.begin();
-                		vf.erase(it + j);
-                	}
-                }
-
-                //l--;
-            }
-            else{
-
-            	for (size_t j = 0; j < vf.size(); j++) {
-
-                    if(vf.at(j).size() ==  l) {
-                        //std::cout<<"found"<<vf.at(j).size() <<std::endl;
-                        flag++;
-                        vf.push_back(vf.at(j).substr(0,l-1));
-                        auto it = vf.begin();
-                        vf.erase(it + j);
-                        break;
-                    }
-                    if(j == vf.size() - 1 && flag == 0){
-                        l--;
-                    }
-                }
-            }		    
-
-		    std::cout<<"[QUADKEYS] New dimension: "<< std::accumulate(vf.begin(), vf.end(), -4, [](int sum, const std::string& elem) {return sum + elem.size() + 21;}) + 180 <<std::endl;
-
-		    if(l<0) {
-		    	break;
-		    }
+		// With std::accumulate we compite the size of the resulting filter string starting from all the Quadkeys
+		// "+21" takes into account the other characters which are needed in the final SQL-like filter, including "%" and "OR"
+		std::cout<<"[QUADKEYS] Checking dimensions: "<<std::accumulate(vf.begin(), vf.end(), -4, [](int sum, const std::string& elem) {return sum + elem.size() + 21;}) + 180<<std::endl;
+		
+		if(std::accumulate(vf.begin(), vf.end(), -4, [](int sum, const std::string& elem) {return sum + elem.size() + 21;}) + 180 > (max_length)){
+			std::cout<<"[QUADKEYS] Dimensions exceeded, resizing:"<<std::endl;
+			if(std::accumulate(vf.begin(), vf.end(), -4, [](int sum, const std::string& elem) {return sum + elem.size() + 21;}) + 180 > 2*(max_length)){
+				std::cout << "[QUADKEYS] Warning: Too Large Area, the process can take a while.. (hint: try reducing the area or the level of detail)" << std::endl;
+			}	
 		}
 
-		//QuadKeyTS::unifyQuadkeys(vf);
-        for(size_t i = 0; i < vf.size(); i++){
-			for(size_t k = 0; k < vf.size(); k++){
-				if(i!=k && vf.at(i) == vf.at(k)){
-				    auto it = vf.begin();
-				    vf.erase(it + k );
-				    i--;
-				    break;
-			    }
+		while(std::accumulate(vf.begin(), vf.end(), -4, [](int sum, const std::string& elem) {return sum + elem.size() + 21;}) + 180 >= max_length ) {
+	   	 	for (size_t j = 0; j < vf.size(); j++) {
+				if(vf.at(j).size() ==  l) {
+					//std::cout<<"Level of detail: "<<m_levelOfDetail<< " " << l<< " " <<vf.at(j).substr(0,l-1)<<std::endl;
+					vf.push_back(vf.at(j).substr(0,l-1));
+					auto it = vf.begin();
+					vf.erase(it + j);
+					break;
+				}
+				else if(j == vf.size() - 1){						
+				    l--;
+					break;
+				}
+			}
+				    
+			if(l<1) {
+				break;
+			}
+
+			// Removing duplicates resulting from the compression due to the removal of the last character from the longest strings
+			for(size_t i = 0; i < vf.size(); i++){
+				for(size_t k = 0; k < vf.size(); k++){
+					if(i!=k && vf.at(i) == vf.at(k)){
+						auto it = vf.begin();
+						vf.erase(it + k );
+						i--;
+						break;
+					}
+				}
 			}
 		}
+
+		std::cout<<"[QUADKEYS] New dimension: "<< std::accumulate(vf.begin(), vf.end(), -4, [](int sum, const std::string& elem) {return sum + elem.size() + 21;}) + 180 <<std::endl;
+		
+		// QuadKeyTS::unifyQuadkeys(vf);
 		
 		quadKeys = vf;
 
 		// This is commented as it is intended only for debug purposes
 		// lastvec.txt contains the final Quadkey vector content after the size reduction phase (if it happens)
-		//std::cout<<"\nFinished\n";
-        // std::ofstream fout("lastvec.txt");
-        // for(int i = 0; i < quadKeys.size(); i++){
-        //     fout << quadKeys.at(i) << "\n";
-        // }
-        // fout.close();
+		// std::ofstream fout("lastvec.txt");
+		// for(size_t i = 0; i < quadKeys.size(); i++){
+		// 	fout << quadKeys.at(i) << "\n";
+		// }
+		// fout.close();
 	}
 }

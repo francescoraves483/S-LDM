@@ -263,6 +263,8 @@ AMQPClient::on_message(proton::delivery &d, proton::message &msg) {
 			}
 		}
 
+		// std::cout << "[DEBUG] Updating vehicle with stationID: " << vehdata.stationID << std::endl;
+
 		db_retval=m_db_ptr->insert(vehdata);
 
 		if(db_retval!=ldmmap::LDMMap::LDMMAP_OK && db_retval!=ldmmap::LDMMap::LDMMAP_UPDATED) {
