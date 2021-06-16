@@ -165,6 +165,7 @@ AMQPClient::on_container_start(proton::container &c) {
 		set_filter(opts, s);
 	}
 
+	std::cout << "[AMQPClient] Connecting to AMQP broker at: " << conn_url_ << std::endl;
 	proton::connection conn = c.connect(conn_url_);
 	conn.open_receiver(addr_, proton::receiver_options().source(opts));
 }
@@ -273,8 +274,11 @@ AMQPClient::on_message(proton::delivery &d, proton::message &msg) {
 
 		// If a trigger manager has been enabled, check if any triggering condition has occurred (for the time being, only a simple trigger manager based on turn indicators has been developed)
 		if(m_indicatorTrgMan_enabled == true && vehdata.exteriorLights.isAvailable()) {
-			if(m_indicatorTrgMan.checkAndTrigger(lat,lon,stationID,vehdata.exteriorLights.getData()) == true) {
-				std::cout << "[TRIGGER] Triggering condition detected!" << std::endl;
+			// Trigger either if the cross-border trigger mode is enabled or if the triggering vehicle is located inside the internal area of this S-LDM instance
+			if(m_opts_ptr->cross_border_trigger==true || m_areaFilter.isInsideInternal(lat,lon)==true) {
+				if(m_indicatorTrgMan.checkAndTrigger(lat,lon,stationID,vehdata.exteriorLights.getData()) == true) {
+					std::cout << "[TRIGGER] Triggering condition detected!" << std::endl;
+				}
 			}
 		}
 

@@ -83,10 +83,11 @@ void *VehVizUpdater_callback(void *arg) {
 	// Get the central lat and lon values stored in the DB
 	std::pair<double,double> centralLatLon= db_ptr->getCentralLatLon();
 
-	// Create a new veheicle visualizer object
-	vehicleVisualizer vehicleVisObj;
+	// Create a new veheicle visualizer object reading the (IPv4) address and port from the options (the default values are set as a macro in options/options.h)
+	vehicleVisualizer vehicleVisObj(vizopts_ptr->opts_ptr->vehviz_nodejs_port,std::string(options_string_pop(vizopts_ptr->opts_ptr->vehviz_nodejs_addr)));
 
 	// Start the node.js server and perform an initial connection with it
+	vehicleVisObj.setHTTPPort(vizopts_ptr->opts_ptr->vehviz_web_interface_port);
 	vehicleVisObj.startServer();
 	vehicleVisObj.connectToServer ();
 	vehicleVisObj.sendMapDraw(centralLatLon.first, centralLatLon.second,
@@ -331,11 +332,7 @@ int main(int argc, char **argv) {
 
 	// Start the AMQP client event loop (for the time being, on loopback, but some options will be added in the future)
 	try {
-		std::string conn_url = argc > 1 ? argv[1] : "127.0.0.1:5672";
-		std::string addr = argc > 2 ? argv[2] : "topic://5gcarmen.examples";
-
-
-		AMQPClient recvClient("127.0.0.1:5672", "topic://5gcarmen.examples", sldm_opts.min_lat, sldm_opts.max_lat, sldm_opts.min_lon, sldm_opts.max_lon, 16, &sldm_opts, db_ptr);
+		AMQPClient recvClient(std::string(options_string_pop(sldm_opts.broker_url)), std::string(options_string_pop(sldm_opts.broker_topic)), sldm_opts.min_lat, sldm_opts.max_lat, sldm_opts.min_lon, sldm_opts.max_lon, 16, &sldm_opts, db_ptr);
 		recvClient.setIndicatorTriggerManager(true);
 		proton::container(recvClient).run();
 
@@ -349,6 +346,9 @@ int main(int argc, char **argv) {
 	pthread_join(vehviz_tid,nullptr);
 
 	db_ptr->clear();
+
+	// Freeing the options
+	options_free(&sldm_opts);
 
 	return 0;
 }

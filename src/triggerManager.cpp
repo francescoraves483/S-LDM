@@ -4,7 +4,7 @@
 bool indicatorTriggerManager::checkAndTrigger(double lat, double lon, uint64_t refVehStationID, uint8_t exteriorLightsStatus) {
 	bool retval = false;
 
-	if(!m_db_ptr) {
+	if(!m_db_ptr || !m_opts_ptr) {
 		return false;
 	}
 
@@ -18,7 +18,11 @@ bool indicatorTriggerManager::checkAndTrigger(double lat, double lon, uint64_t r
 			// with a given stationID as reference (i.e., generating the context around a moving vehicle), and not considering
 			// a fixed (lat,lon) central point
 			// ManeuveringServiceRestClient *ms_restclient = new(std::nothrow) ManeuveringServiceRestClient(lat,lon,refVehStationID,m_db_ptr);
-			ManeuveringServiceRestClient *ms_restclient = new(std::nothrow) ManeuveringServiceRestClient(refVehStationID,m_db_ptr);
+
+			std::cout << "[INDICATOR TRIGGER MANAGER] Contacting the REST server at: " << options_string_pop(m_opts_ptr->ms_rest_addr) << ":" << m_opts_ptr->ms_rest_port << std::endl;
+			
+			ManeuveringServiceRestClient *ms_restclient = 
+				new(std::nothrow) ManeuveringServiceRestClient(refVehStationID,m_db_ptr,std::string(options_string_pop(m_opts_ptr->ms_rest_addr)),m_opts_ptr->ms_rest_port);
 
 			if(ms_restclient!=nullptr) {
 				ms_restclient->setNotifyFunction(std::bind(&indicatorTriggerManager::notifyOpTermination,this,std::placeholders::_1));

@@ -193,7 +193,11 @@ vehicleVisualizer::startServer()
 		exit(EXIT_FAILURE);
 	}
 
-	servercmd = "node " + m_serverpath + " " + std::to_string(m_httpport) + " &";
+	// servercmd = "node " + m_serverpath + " " + std::to_string(m_httpport) + " &";
+
+	// Command line parameters: HTTP web interface port, UDP socket bind address, UDP socket port
+	servercmd = "node " + m_serverpath + " " + std::to_string(m_httpport) + " " + m_ip + " " + std::to_string(m_port) + " &";
+
 	int startCmdRval = std::system(servercmd.c_str());
 
 	// If the result is 0, system() was able to successfully launch the command (which may fail afterwards, though)

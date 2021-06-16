@@ -29,11 +29,12 @@ fs.readFile(filepath, 'utf8', function (err,data) {
 // Read the server port as a command line option
 var server_argv = process.argv.slice(2);
 
-if(server_argv.length!=1) {
-    console.error("VehicleVisualizer: Error. One argument is expected and " + server_argv.length.toString() + " were specified.");
+if(server_argv.length!=3) {
+    console.error("VehicleVisualizer: Error. Three arguments are expected and " + server_argv.length.toString() + " were specified.");
     process.exit(1);
 } else {
     console.log("VehicleVisualizer: HTTP server listening on port: " + server_argv[0]);
+    console.log("VehicleVisualizer: UDP socket bound at: " + server_argv[1] + ":" +  server_argv[2]);
 }
 
 // Create a new HTTP server with express.static
@@ -50,8 +51,8 @@ const udpSocket = dgram.createSocket('udp4');
 
 // Bind the socket to the loopback address/interface
 udpSocket.bind({
-    address: '127.0.0.1',
-    port: 48110
+    address: server_argv[1],
+    port: server_argv[2]
 });
 
 // This callback is called when the UDP socket starts "listening" for new packets

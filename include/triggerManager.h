@@ -7,12 +7,13 @@
 #include "LDMmap.h"
 extern "C" {
 	#include "CAM.h"
+	#include "options.h"
 }
 
 // Simple, indicator-based, trigger manager
 class indicatorTriggerManager {
 	public:
-		indicatorTriggerManager(ldmmap::LDMMap *db_ptr) : m_db_ptr(db_ptr) {}
+		indicatorTriggerManager(ldmmap::LDMMap *db_ptr, options_t *opts_ptr) : m_db_ptr(db_ptr), m_opts_ptr(opts_ptr) {}
 		
 		void setDBpointer(ldmmap::LDMMap *db_ptr) {m_db_ptr = db_ptr;}
 		bool checkAndTrigger(double lat, double lon, uint64_t refVehStationID, uint8_t exteriorLightsStatus);
@@ -25,6 +26,7 @@ class indicatorTriggerManager {
 
 	private:
 		ldmmap::LDMMap *m_db_ptr;
+		options_t *m_opts_ptr;
 };
 
 #endif // TRIGGERMAN_H

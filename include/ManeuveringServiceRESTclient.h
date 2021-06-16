@@ -18,6 +18,9 @@ class ManeuveringServiceRestClient {
 		ManeuveringServiceRestClient(uint64_t refVehStationID, ldmmap::LDMMap *db_ptr) :
 			m_range_m(m_range_m_default), m_db_ptr(db_ptr), m_refVehStationID(refVehStationID), m_notify_fcn(nullptr) {m_thread_running=false; m_srv_addr="http://localhost"; m_port=8000;};
 
+			ManeuveringServiceRestClient(uint64_t refVehStationID, ldmmap::LDMMap *db_ptr, std::string address, long port) :
+			m_range_m(m_range_m_default), m_db_ptr(db_ptr), m_refVehStationID(refVehStationID), m_notify_fcn(nullptr) {m_thread_running=false; m_srv_addr=address; m_port=port;};
+
 		void setNotifyFunction(std::function<void(uint64_t)> notify_fcn) {m_notify_fcn = notify_fcn;}
 		void inline callNotifyFunction(void);
 
@@ -35,6 +38,9 @@ class ManeuveringServiceRestClient {
 		void setServerAddress(std::string address) {m_srv_addr = address;}
 		void setServerPort(long port) {m_port = port;}
 		void setServerAddressPort(std::string address, long port) {m_srv_addr = address; m_port = port;}
+
+		void changeContextRange(double range_m) {m_range_m=range_m;}
+		double getContextRange(void) {return m_range_m;}
 
 		std::string inline getServerFullAddress(void);
 

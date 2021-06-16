@@ -44,7 +44,7 @@ class AMQPClient : public proton::messaging_handler {
 		bool m_indicatorTrgMan_enabled;
 	public:
 		AMQPClient(const std::string &u,const std::string &a,const double &latmin,const double &latmax,const double &lonmin, const double &lonmax, const int &lev, struct options *opts_ptr, ldmmap::LDMMap *db_ptr) :
-      	conn_url_(u), addr_(a), max_latitude(latmax), max_longitude(lonmax), min_latitude(latmin), min_longitude(lonmin), levelOfdetail(lev), m_opts_ptr(opts_ptr), m_db_ptr(db_ptr), m_indicatorTrgMan(db_ptr) {
+      	conn_url_(u), addr_(a), max_latitude(latmax), max_longitude(lonmax), min_latitude(latmin), min_longitude(lonmin), levelOfdetail(lev), m_opts_ptr(opts_ptr), m_db_ptr(db_ptr), m_indicatorTrgMan(db_ptr,opts_ptr) {
       		m_printMsg=false;
       		m_areaFilter.setOptions(m_opts_ptr);
       		m_indicatorTrgMan_enabled=false;
