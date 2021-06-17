@@ -140,10 +140,24 @@ namespace QuadKeys
 	QuadKeyTS::LatLonToQuadKeyRange(double min_latitude, double max_latitude, double min_longitude, double max_longitude) {
 		// int levelOfDetail = ...; // The value is now obtained directly from the private attribute
 		//std::cout<<"\nCurrent variation: "<<m_latlon_variation<<"\nCurrent levelOfDetail: "<<m_levelOfDetail<<std::endl;
+
+		// Round to the second decimal digit to avoid any issue when computing the Quadkeys and increasing the lat and lon
+		// of a value (i.e., m_latlon_variation) which is specified up to three digits after the decimal point
+		// If we keep more digits in the starting (and final) values, these will always be kept as an "offset" to each computed
+		// value (e.g., if min_latitude=46.121228 and m_latlon_variation=0.004, we will consider 46.121228 then 46.125228 then 46.129228
+		// and so on, always bringing with us the 0.000228 "offset", which sometimes seems to cause issues in the Quadkeys computation,
+		// leading to a few skipped Quadkeys in some specific circumstances)
+		// Round the minimum values with floor() and the maximum values with ceil() to avoid "losing" even any small portion
+		// of the area covered by the S-LDM when computing the Quadkeys covering that area
+		min_latitude = std::floor(min_latitude*100.0)/100.0;
+		max_latitude = std::ceil(max_latitude*100.0)/100.0;
+		min_longitude = std::floor(min_longitude*100.0)/100.0;
+		max_longitude = std::ceil(max_longitude*100.0)/100.0;
+
 		std::string quadKey;
 		std::vector<std::string> v = {};
 
-		//starting scan the lan_lon using the private attribute m_latlon_variation
+		// Starting scan the lan_lon using the private attribute m_latlon_variation
 		for(double j = min_latitude; j <= max_latitude; j+=m_latlon_variation){
 			for(double k = min_longitude; k <= max_longitude; k+=m_latlon_variation){
 
@@ -370,7 +384,7 @@ namespace QuadKeys
 			}
 		}
 
-		std::cout<<"[QUADKEYS] New dimension: "<< std::accumulate(vf.begin(), vf.end(), -4, [](int sum, const std::string& elem) {return sum + elem.size() + 21;}) + 180 <<std::endl;
+		std::cout<<"[QUADKEYS] Final dimension: "<< std::accumulate(vf.begin(), vf.end(), -4, [](int sum, const std::string& elem) {return sum + elem.size() + 21;}) + 180 <<std::endl;
 		
 		// QuadKeyTS::unifyQuadkeys(vf);
 		
