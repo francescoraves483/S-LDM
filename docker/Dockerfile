@@ -19,7 +19,7 @@ RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 RUN useradd -ms /bin/bash sldm
 
 # Copy the S-LDM source code inside the container
-COPY . /home/cas/SLDM
+COPY . /home/sldm/SLDM
 
 # Install dependencies
 RUN apt-get update && \
@@ -39,13 +39,13 @@ RUN cd qpid-proton-0.33.0 && \
     make install
 
 # Compile the S-LDM
-RUN cd /home/cas/SLDM && \
+RUN cd /home/sldm/SLDM && \
     make fullclean && \
     make
     
 USER sldm
 
-WORKDIR /home/cas/SLDM
+WORKDIR /home/sldm/SLDM
 # EXPOSE 5671 5672 8161
 
 CMD ["/bin/sh", "-c", "./SLDM -A ${SLDM_INTERNAL_AREA} --ext-area-lat-factor ${SLDM_EXTERNAL_AREA_LAT_FACTOR} --ext-area-lon-factor ${SLDM_EXTERNAL_AREA_LON_FACTOR} --broker-url ${BROKER_URL} --broker-queue ${AMQP_TOPIC} --ms-rest-address ${MS_REST_ADDRESS} --ms-rest-port ${MS_REST_PORT} --vehviz-nodejs-address ${VEHVIZ_UDP_ADDRESS} --vehviz-nodejs-port ${VEHVIZ_UDP_PORT} --vehviz-web-port ${VEHVIZ_WEB_PORT}"]
