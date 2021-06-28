@@ -20,6 +20,7 @@
 #define LONGOPT_Z "vehviz-nodejs-address"
 #define LONGOPT_z "vehviz-nodejs-port"
 #define LONGOPT_w "vehviz-web-port"
+#define LONGOPT_L "log-file-name"
 
 #define LONGOPT_STR_CONSTRUCTOR(LONGOPT_STR) "  --"LONGOPT_STR"\n"
 
@@ -41,6 +42,7 @@ static const struct option long_opts[]={
 	{LONGOPT_Z,				required_argument,	NULL, 'Z'},
 	{LONGOPT_z,				required_argument,	NULL, 'z'},
 	{LONGOPT_w,				required_argument,	NULL, 'w'},
+	{LONGOPT_L,				required_argument,	NULL, 'L'},
 	{NULL, 0, NULL, 0}
 };
 
@@ -109,6 +111,11 @@ static const struct option long_opts[]={
 	"  -w: set the port at which the web interface of the Vehicle Visualizer will be available.\n" \
 	"\t  Default: ("STRINGIFY(DEFAULT_VEHVIZ_WEB_PORT)").\n"
 
+#define OPT_L_description \
+	LONGOPT_STR_CONSTRUCTOR(LONGOPT_L) \
+	"  -L: enable log mode and set the name of the textual file where the data will be saved.\n" \
+	"\t  'stdout' can be specified to output the log data on the screen. Default: (disabled).\n"
+
 
 static void print_long_info(char *argv0) {
 	fprintf(stdout,"\nUsage: %s [-A S-LDM coverage internal area] [options]\n"
@@ -127,6 +134,7 @@ static void print_long_info(char *argv0) {
 		OPT_Z_description
 		OPT_z_description
 		OPT_w_description
+		OPT_L_description
 		,
 		argv0,argv0,argv0);
 
@@ -169,6 +177,8 @@ void options_initialize(struct options *options) {
 	options->vehviz_nodejs_port=DEFAULT_VEHVIZ_NODEJS_UDP_PORT;
 
 	options->vehviz_web_interface_port=DEFAULT_VEHVIZ_WEB_PORT;
+
+	options->logfile_name=options_string_declare();
 }
 
 unsigned int parse_options(int argc, char **argv, struct options *options) {
@@ -298,6 +308,13 @@ unsigned int parse_options(int argc, char **argv, struct options *options) {
 				} else if(errno || options->vehviz_web_interface_port<1 || options->vehviz_web_interface_port>65535) {
 					// Only port numbers from 1 to 65535 are valid and can be accepted
 					fprintf(stderr,"Error in parsing the port number for the web interface of the Vehicle Visualizer.\n");
+					print_short_info_err(options,argv[0]);
+				}
+				break;
+
+			case 'L':
+				if(!options_string_push(&(options->logfile_name),optarg)) {
+					fprintf(stderr,"Error in parsing the log file name: %s.\n",optarg);
 					print_short_info_err(options,argv[0]);
 				}
 				break;

@@ -42,18 +42,32 @@ class AMQPClient : public proton::messaging_handler {
 		ldmmap::LDMMap *m_db_ptr;
 		indicatorTriggerManager m_indicatorTrgMan;
 		bool m_indicatorTrgMan_enabled;
+
+		std::string m_logfile_name;
+		FILE *m_logfile_file;
 	public:
-		AMQPClient(const std::string &u,const std::string &a,const double &latmin,const double &latmax,const double &lonmin, const double &lonmax, const int &lev, struct options *opts_ptr, ldmmap::LDMMap *db_ptr) :
+		AMQPClient(const std::string &u,const std::string &a,const double &latmin,const double &latmax,const double &lonmin, const double &lonmax, const int &lev, struct options *opts_ptr, ldmmap::LDMMap *db_ptr, std::string logfile_name) :
+      	conn_url_(u), addr_(a), max_latitude(latmax), max_longitude(lonmax), min_latitude(latmin), min_longitude(lonmin), levelOfdetail(lev), m_opts_ptr(opts_ptr), m_db_ptr(db_ptr), m_indicatorTrgMan(db_ptr,opts_ptr), m_logfile_name(logfile_name) {
+      		m_printMsg=false;
+      		m_areaFilter.setOptions(m_opts_ptr);
+      		m_indicatorTrgMan_enabled=false;
+      		m_logfile_file=nullptr;
+      	}
+
+      	AMQPClient(const std::string &u,const std::string &a,const double &latmin,const double &latmax,const double &lonmin, const double &lonmax, const int &lev, struct options *opts_ptr, ldmmap::LDMMap *db_ptr) :
       	conn_url_(u), addr_(a), max_latitude(latmax), max_longitude(lonmax), min_latitude(latmin), min_longitude(lonmin), levelOfdetail(lev), m_opts_ptr(opts_ptr), m_db_ptr(db_ptr), m_indicatorTrgMan(db_ptr,opts_ptr) {
       		m_printMsg=false;
       		m_areaFilter.setOptions(m_opts_ptr);
       		m_indicatorTrgMan_enabled=false;
+      		m_logfile_name = "";
+      		m_logfile_file=nullptr;
       	}
 
       	void setIndicatorTriggerManager(bool enabled) {m_indicatorTrgMan_enabled=enabled;}
 		
 		void on_container_start(proton::container &c) override;
 		void on_message(proton::delivery &d, proton::message &msg) override;
+		void on_container_stop(proton::container &c) override;
 
 		void setPrintMsg(bool printMsgEnable) {m_printMsg = printMsgEnable;}
 };

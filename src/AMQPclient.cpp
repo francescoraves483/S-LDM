@@ -40,6 +40,16 @@ AMQPClient::on_container_start(proton::container &c) {
 	std::vector<std::string> quadKeys;
 	std::vector<std::string> fromfile;
 
+	if(m_logfile_name!="") {
+		if(m_logfile_name=="stdout") {
+			m_logfile_file=stdout;
+		} else {
+			// Opening the output file in write + append mode just to be safe in case the user does not change the file name
+			// between different executions of the S-LDM
+			m_logfile_file=fopen(m_logfile_name.c_str(),"wa");
+		}
+	}
+
 	/* First version of the code without the caching mechanism. Kept here for reference. */
 	/*
 		//LevelOfDetail set into the tilesys class as private variables
@@ -74,6 +84,11 @@ AMQPClient::on_container_start(proton::container &c) {
 	std::string line;
 	bool cache_file_found = false;
 	std::ifstream ifile("cachefile.sldmc");
+	uint64_t bf = 0.0,af = 0.0;
+
+	if(m_logfile_name!="") {
+		bf=get_timestamp_us();
+	}
 
 	if(ifile.is_open()) {
 		std::cout<<"[AMQPClient] Cache file available: reading the parameters..."<< std::endl;
@@ -165,6 +180,14 @@ AMQPClient::on_container_start(proton::container &c) {
 		set_filter(opts, s);
 	}
 
+	if(m_logfile_name!="") {
+		af=get_timestamp_us();
+
+		fprintf(m_logfile_file,"[LOG - AMQP STARTUP] Area=%.7lf:%.7lf-%.7lf:%7lf QKCacheFileFound=%d ProcTimeMilliseconds=%.3lf\n",
+			min_latitude,min_longitude,max_latitude,max_longitude,
+			cache_file_found,(af-bf)/1000.0);
+	}
+
 	std::cout << "[AMQPClient] Connecting to AMQP broker at: " << conn_url_ << std::endl;
 	proton::connection conn = c.connect(conn_url_);
 	conn.open_receiver(addr_, proton::receiver_options().source(opts));
@@ -173,6 +196,15 @@ AMQPClient::on_container_start(proton::container &c) {
 void 
 AMQPClient::on_message(proton::delivery &d, proton::message &msg) {
 	etsiDecoder::etsiDecodedData_t decodedData;
+
+	uint64_t bf = 0.0,af = 0.0;
+	uint64_t main_bf = 0.0,main_af = 0.0;
+
+	if(m_logfile_name!="") {
+		main_bf=get_timestamp_us();
+
+		fprintf(m_logfile_file,"[NEW MESSAGE RX]\n");
+	}
 
 	if(m_printMsg == true) {
 		std::cout << msg.body() << std::endl;
@@ -196,10 +228,20 @@ AMQPClient::on_message(proton::delivery &d, proton::message &msg) {
 		return;
 	}
 
+	if(m_logfile_name!="") {
+		bf=get_timestamp_us();
+	}
+
 	// Decode the content of the message, using the decoder-module frontend class
 	if(m_decodeFrontend.decodeEtsi(message_bin_buf, message_bin.size (), decodedData)!=ETSI_DECODER_OK) {
 		std::cerr << "Error! Cannot decode ETSI packet!" << std::endl;
 		return;
+	}
+
+	if(m_logfile_name!="") {
+		af=get_timestamp_us();
+
+		fprintf(m_logfile_file,"[LOG - MESSAGE DECODER] ProcTimeMilliseconds=%.3lf\n",(af-bf)/1000.0);
 	}
 
 	// If a CAM has been received, it should be used to update the internal in-memory database
@@ -208,12 +250,27 @@ AMQPClient::on_message(proton::delivery &d, proton::message &msg) {
 		double lat = decoded_cam->cam.camParameters.basicContainer.referencePosition.latitude/10000000.0;
 		double lon = decoded_cam->cam.camParameters.basicContainer.referencePosition.longitude/10000000.0;
 		uint32_t stationID = decoded_cam->header.stationID;
+		double l_inst_period=0.0;
 
 		// After getting the lat and lon values from the CAM, check if it is inside the S-LDM full coverage area,
 		// using the areaFilter module (which can access the command line options, thus also the coverage area
 		// specified by the user)
+		if(m_logfile_name!="") {
+			bf=get_timestamp_us();
+		}
+
 		if(m_areaFilter.isInside(lat,lon)==false) {
 			return;
+		}
+
+		if(m_logfile_name!="") {
+			af=get_timestamp_us();
+
+			fprintf(m_logfile_file,"[LOG - AREA FILTER] ProcTimeMilliseconds=%.3lf\n",(af-bf)/1000.0);
+		}
+
+		if(m_logfile_name!="") {
+			bf=get_timestamp_us();
 		}
 
 		// Update the database
@@ -230,13 +287,13 @@ AMQPClient::on_message(proton::delivery &d, proton::message &msg) {
 		vehdata.camTimestamp = static_cast<long>(decoded_cam->cam.generationDeltaTime);
 
 		if(decoded_cam->cam.camParameters.highFrequencyContainer.choice.basicVehicleContainerHighFrequency.vehicleWidth != VehicleWidth_unavailable) {
-			vehdata.vehicleWidth = ldmmap::OptionalDataItem<long>(decoded_cam->cam.camParameters.highFrequencyContainer.choice.basicVehicleContainerHighFrequency.vehicleWidth);
+			vehdata.vehicleWidth = ldmmap::OptionalDataItem<long>(decoded_cam->cam.camParameters.highFrequencyContainer.choice.basicVehicleContainerHighFrequency.vehicleWidth*100);
 		} else {
 			vehdata.vehicleWidth = ldmmap::OptionalDataItem<long>(false);
 		}
 
 		if(decoded_cam->cam.camParameters.highFrequencyContainer.choice.basicVehicleContainerHighFrequency.vehicleLength.vehicleLengthValue != VehicleLengthValue_unavailable) {
-			vehdata.vehicleLength = ldmmap::OptionalDataItem<long>(decoded_cam->cam.camParameters.highFrequencyContainer.choice.basicVehicleContainerHighFrequency.vehicleLength.vehicleLengthValue);
+			vehdata.vehicleLength = ldmmap::OptionalDataItem<long>(decoded_cam->cam.camParameters.highFrequencyContainer.choice.basicVehicleContainerHighFrequency.vehicleLength.vehicleLengthValue*100);
 		} else {
 			vehdata.vehicleLength = ldmmap::OptionalDataItem<long>(false);
 		}
@@ -264,12 +321,37 @@ AMQPClient::on_message(proton::delivery &d, proton::message &msg) {
 			}
 		}
 
+		// If logging is enabled, compute also an "instantaneous update period" metric (i.e., how much time has passed between two consecutive vehicle updates)
+		if(m_logfile_name!="") {
+			ldmmap::LDMMap::returnedVehicleData_t retveh;
+
+			if(m_db_ptr->lookup(stationID,retveh)==ldmmap::LDMMap::LDMMAP_OK) {
+				l_inst_period=(get_timestamp_us()-retveh.vehData.timestamp_us)/1000.0;
+			} else {
+				l_inst_period=-1.0;
+			}
+			
+		}
+
 		// std::cout << "[DEBUG] Updating vehicle with stationID: " << vehdata.stationID << std::endl;
 
 		db_retval=m_db_ptr->insert(vehdata);
 
 		if(db_retval!=ldmmap::LDMMap::LDMMAP_OK && db_retval!=ldmmap::LDMMap::LDMMAP_UPDATED) {
 			std::cerr << "Warning! Insert on the database for vehicle " << (int) stationID << "failed!" << std::endl;
+		}
+
+		if(m_logfile_name!="") {
+			af=get_timestamp_us();
+
+			fprintf(m_logfile_file,"[LOG - DATABASE UPDATE] LowFrequencyContainerAvail=%d InsertReturnValue=%d ProcTimeMilliseconds=%.3lf\n",
+				decoded_cam->cam.camParameters.highFrequencyContainer.choice.basicVehicleContainerHighFrequency.vehicleWidth != VehicleWidth_unavailable,
+				db_retval,
+				(af-bf)/1000.0);
+		}
+
+		if(m_logfile_name!="") {
+			bf=get_timestamp_us();
 		}
 
 		// If a trigger manager has been enabled, check if any triggering condition has occurred (for the time being, only a simple trigger manager based on turn indicators has been developed)
@@ -282,9 +364,42 @@ AMQPClient::on_message(proton::delivery &d, proton::message &msg) {
 			}
 		}
 
+		if(m_logfile_name!="") {
+			af=get_timestamp_us();
+
+			fprintf(m_logfile_file,"[LOG - TRIGGER CHECK] TriggerEnabled=%d ExteriorLightsAvail=%d CrossBrdTriggerMode=%d IsInsideInternalArea=%d ProcTimeMilliseconds=%.3lf\n",
+				m_indicatorTrgMan_enabled,
+				vehdata.exteriorLights.isAvailable(),
+				m_opts_ptr->cross_border_trigger,
+				m_areaFilter.isInsideInternal(lat,lon),
+				(af-bf)/1000.0);
+		}
+
 		ASN_STRUCT_FREE(asn_DEF_CAM,decoded_cam);
+
+		if(m_logfile_name!="") {
+			main_af=get_timestamp_us();
+
+			fprintf(m_logfile_file,"[LOG - FULL CAM PROCESSING] StationID=%u Coordinates=%.7lf:%.7lf InstUpdatePeriod=%.3lf"
+				" CAMTimestamp=%ld GNTimestamp=%lu CAMTimestampDiff=%ld GNTimestampDiff=%ld"
+				" ProcTimeMilliseconds=%.3lf\n",
+				stationID,lat,lon,
+				l_inst_period,
+				vehdata.camTimestamp,vehdata.gnTimestamp,get_timestamp_ms_cam()-vehdata.camTimestamp,get_timestamp_ms_gn()-vehdata.gnTimestamp,
+				(main_af-main_bf)/1000.0);
+
+			fprintf(stdout,"ETSI TS 102 894-2: %ld\n",get_timestamp_ms_gn());		
+		}
+
 	} else {
 		std::cerr << "Warning! Only CAM messages are supported for the time being!" << std::endl;
 		return;
+	}
+}
+
+void 
+AMQPClient::on_container_stop(proton::container &c) {
+	if(m_logfile_name!="" && m_logfile_name!="stdout") {
+		fclose(m_logfile_file);
 	}
 }

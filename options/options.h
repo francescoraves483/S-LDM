@@ -46,7 +46,7 @@
 // Valid options
 // Any new option should be handled in the switch-case inside parse_options() and the corresponding char should be added to VALID_OPTS
 // If an option accepts an additional argument, it is followed by ':'
-#define VALID_OPTS "hvA:E:F:cU:Q:r:s:Z:z:w:"
+#define VALID_OPTS "hvA:E:F:cU:Q:r:s:Z:z:w:L:"
 
 #define INIT_CODE 0xAE
 
@@ -77,6 +77,8 @@ typedef struct options {
 	long vehviz_nodejs_port; // Advanced option: port number for the UDP connection to the Node.js server
 
 	long vehviz_web_interface_port; // Port number for the Vehicle Visualizer web interface
+
+	options_string logfile_name; // Name of the log file where performance data should be store (if specified)
 } options_t;
 
 void options_initialize(struct options *options);

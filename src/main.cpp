@@ -330,9 +330,15 @@ int main(int argc, char **argv) {
 	pthread_create(&vehviz_tid,NULL,VehVizUpdater_callback,(void *) &vizParams);
 	// pthread_attr_destroy(&tattr);
 
+	// Get the log file name from the options, if available, to enable log mode inside the AMQP client and the S-LDM modules
+	std::string logfile_name="";
+	if(options_string_len(sldm_opts.logfile_name)>0) {
+		logfile_name=std::string(options_string_pop(sldm_opts.logfile_name));
+	}
+
 	// Start the AMQP client event loop (for the time being, on loopback, but some options will be added in the future)
 	try {
-		AMQPClient recvClient(std::string(options_string_pop(sldm_opts.broker_url)), std::string(options_string_pop(sldm_opts.broker_topic)), sldm_opts.min_lat, sldm_opts.max_lat, sldm_opts.min_lon, sldm_opts.max_lon, 16, &sldm_opts, db_ptr);
+		AMQPClient recvClient(std::string(options_string_pop(sldm_opts.broker_url)), std::string(options_string_pop(sldm_opts.broker_topic)), sldm_opts.min_lat, sldm_opts.max_lat, sldm_opts.min_lon, sldm_opts.max_lon, 16, &sldm_opts, db_ptr, logfile_name);
 		recvClient.setIndicatorTriggerManager(true);
 		proton::container(recvClient).run();
 
