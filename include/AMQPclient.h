@@ -66,6 +66,7 @@ class AMQPClient : public proton::messaging_handler {
       	void setIndicatorTriggerManager(bool enabled) {m_indicatorTrgMan_enabled=enabled;}
 		
 		void on_container_start(proton::container &c) override;
+		void on_connection_open(proton::connection &conn) override;
 		void on_message(proton::delivery &d, proton::message &msg) override;
 		void on_container_stop(proton::container &c) override;
 

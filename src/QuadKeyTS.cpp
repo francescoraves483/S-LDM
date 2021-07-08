@@ -158,8 +158,8 @@ namespace QuadKeys
 		std::vector<std::string> v = {};
 
 		// Starting scan the lan_lon using the private attribute m_latlon_variation
-		for(double j = min_latitude; j <= max_latitude; j+=m_latlon_variation){
-			for(double k = min_longitude; k <= max_longitude; k+=m_latlon_variation){
+		for(double j = min_latitude; j <= max_latitude; j+=m_latlon_variation) {
+			for(double k = min_longitude; k <= max_longitude; k+=m_latlon_variation) {
 
 					quadKey = "";
 					double x = (k + 180) / 360;

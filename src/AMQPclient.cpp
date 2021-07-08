@@ -34,6 +34,13 @@ namespace {
 }
 
 void 
+AMQPClient::on_connection_open(proton::connection &conn) {
+	if(m_logfile_name!="" && m_logfile_file!=nullptr) {
+		fprintf(m_logfile_file,"[LOG - AMQPClient] Connection successfully established.\n");
+	}
+}
+
+void 
 AMQPClient::on_container_start(proton::container &c) {
 	proton::source_options opts;
 	QuadKeys::QuadKeyTS tilesys;
