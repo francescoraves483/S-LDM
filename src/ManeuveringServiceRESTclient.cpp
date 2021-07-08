@@ -1,3 +1,6 @@
+// GeographicLib C++
+#include <GeographicLib/Geodesic.hpp>
+
 #include "ManeuveringServiceRESTclient.h"
 #include "pthread.h"
 #include "utils.h"
@@ -87,6 +90,12 @@ void *RESTthread_callback (void *arg) {
 }
 
 web::json::value ManeuveringServiceRestClient::make_SLDM_json(int eventID) {
+	// Get a Geodesic Object reference (GeographicLib C++)
+	const GeographicLib::Geodesic& wgsGeod = GeographicLib::Geodesic::WGS84();
+
+	// Variable to store the relative distance of vehicles w.r.t. the reference vehicle
+	double refRelDist = -1.0;
+
 	// Create a new JSON structure
 	web::json::value sldm_json;
 
@@ -100,14 +109,27 @@ web::json::value ManeuveringServiceRestClient::make_SLDM_json(int eventID) {
 
 	if(m_db_ptr->rangeSelect(m_range_m,m_refVehStationID,returnedvehs)!=ldmmap::LDMMap::LDMMAP_OK) {
 		sldm_json["error"] = MAKE_STR("ERROR");
+		return sldm_json;
 	} else {
 		sldm_json["error"] = MAKE_STR("OK");
 	}
 
+	ldmmap::LDMMap::returnedVehicleData_t refveh;
+
+	if(m_db_ptr->lookup(m_refVehStationID,refveh)!=ldmmap::LDMMap::LDMMAP_OK) {
+		sldm_json["error"] = MAKE_STR("ERROR_REFERENCE_LOOKUP");
+		return sldm_json;
+	} else {
+		sldm_json["error"] = MAKE_STR("OK");
+	}
+	
 	int idx = 0;
 	web::json::value vehicles = web::json::value::array();
 
 	for(ldmmap::LDMMap::returnedVehicleData_t vehdata : returnedvehs) {
+		// Compute the relative distance w.r.t. the reference vehicle
+		wgsGeod.Inverse(refveh.vehData.lat,refveh.vehData.lon,vehdata.vehData.lat,vehdata.vehData.lon,refRelDist);
+
 		vehicles[idx] = make_vehicle(vehdata.vehData.stationID,
 			vehdata.vehData.lat,
 			vehdata.vehData.lon,
@@ -117,7 +139,8 @@ web::json::value ManeuveringServiceRestClient::make_SLDM_json(int eventID) {
 			vehdata.vehData.vehicleLength,
 			vehdata.vehData.vehicleWidth,
 			vehdata.vehData.speed_ms,
-			vehdata.phData);
+			vehdata.phData,
+			refRelDist);
 
 		idx++;
 	}
@@ -136,7 +159,8 @@ web::json::value ManeuveringServiceRestClient::make_vehicle(uint64_t stationID,
 	ldmmap::OptionalDataItem<long> car_length_mm,
 	ldmmap::OptionalDataItem<long> car_width_mm,
 	double speed_ms,
-	ldmmap::PHpoints *path_history
+	ldmmap::PHpoints *path_history,
+	double relative_dist_m
 	) {
 
 	web::json::value vehicle;
@@ -148,6 +172,7 @@ web::json::value ManeuveringServiceRestClient::make_vehicle(uint64_t stationID,
 	vehicle["turnindicator"] = MAKE_STR(turnindicator);
 	vehicle["CAM_tstamp"] = MAKE_NUM(CAM_tstamp);
 	vehicle["GN_tstamp"] = MAKE_NUM(GN_tstamp);
+	vehicle["relative_dist_to_reference_m"] = MAKE_NUM(relative_dist_m);
 
 	if(car_length_mm.isAvailable()) {
 		vehicle["car_len_mm"] = MAKE_NUM(car_length_mm.getData());

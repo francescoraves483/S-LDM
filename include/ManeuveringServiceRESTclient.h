@@ -18,7 +18,7 @@ class ManeuveringServiceRestClient {
 		ManeuveringServiceRestClient(uint64_t refVehStationID, ldmmap::LDMMap *db_ptr) :
 			m_range_m(m_range_m_default), m_db_ptr(db_ptr), m_refVehStationID(refVehStationID), m_notify_fcn(nullptr) {m_thread_running=false; m_srv_addr="http://localhost"; m_port=8000;};
 
-			ManeuveringServiceRestClient(uint64_t refVehStationID, ldmmap::LDMMap *db_ptr, std::string address, long port) :
+		ManeuveringServiceRestClient(uint64_t refVehStationID, ldmmap::LDMMap *db_ptr, std::string address, long port) :
 			m_range_m(m_range_m_default), m_db_ptr(db_ptr), m_refVehStationID(refVehStationID), m_notify_fcn(nullptr) {m_thread_running=false; m_srv_addr=address; m_port=port;};
 
 		void setNotifyFunction(std::function<void(uint64_t)> notify_fcn) {m_notify_fcn = notify_fcn;}
@@ -45,7 +45,6 @@ class ManeuveringServiceRestClient {
 		std::string inline getServerFullAddress(void);
 
 		web::json::value make_SLDM_json(int eventID);
-
 	private:
 		web::json::value make_vehicle(uint64_t stationID, 
 			double lat, 
@@ -56,7 +55,8 @@ class ManeuveringServiceRestClient {
 			ldmmap::OptionalDataItem<long> car_length_mm,
 			ldmmap::OptionalDataItem<long> car_width_mm,
 			double speed_ms,
-			ldmmap::PHpoints *path_history
+			ldmmap::PHpoints *path_history,
+			double relative_dist_m
 			);
 
 		const double m_range_m_default = 100.0;
