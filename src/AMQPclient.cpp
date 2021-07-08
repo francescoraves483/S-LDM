@@ -3,6 +3,7 @@
 #include "utils.h"
 #include <fstream>
 #include <iomanip>
+#include <proton/reconnect_options.hpp>
 
 extern "C" {
 	#include "CAM.h"
@@ -46,6 +47,44 @@ AMQPClient::on_container_start(proton::container &c) {
 	QuadKeys::QuadKeyTS tilesys;
 	std::vector<std::string> quadKeys;
 	std::vector<std::string> fromfile;
+	proton::connection_options co;
+	bool co_set = false;
+
+	// Set the connection options
+	if(!m_username.empty()) {
+		co.user(m_username);
+		co_set = true;
+
+		std::cout<<"[AMQPClient] AMQP username successfully set: "<<m_username<<std::endl;
+	}
+
+	if(!m_password.empty()) {
+		co.password(m_password);
+		co_set = true;
+
+		std::cout<<"[AMQPClient] AMQP password successfully set."<<std::endl;
+	}
+
+	if(m_reconnect == true) {
+		co.reconnect(proton::reconnect_options());
+		co_set = true;
+
+		std::cout<<"[AMQPClient] AMQP automatic reconnection enabled."<<std::endl;
+	}
+
+	if(m_allow_sasl == true) {
+		co.sasl_enabled(true);
+		co_set = true;
+
+		std::cout<<"[AMQPClient] AMQP SASL enabled."<<std::endl;
+	}
+
+	if(m_allow_insecure == true) {
+		co.sasl_allow_insecure_mechs(true);
+		co_set = true;
+
+		std::cout<<"[AMQPClient] Warning: clear-text passwords are enabled."<<std::endl;
+	}
 
 	if(m_logfile_name!="") {
 		if(m_logfile_name=="stdout") {
@@ -151,7 +190,7 @@ AMQPClient::on_container_start(proton::container &c) {
 
 		ofile.close();
 
-		std::cout<<"\n[AMQP Client] Finished: Quadkey cache file created.\n";
+		std::cout<<"[AMQP Client] Finished: Quadkey cache file created."<<std::endl;
 
 		// Here we create a string to pass to the filter (SQL like)
 		std::string s;
@@ -196,7 +235,16 @@ AMQPClient::on_container_start(proton::container &c) {
 	}
 
 	std::cout << "[AMQPClient] Connecting to AMQP broker at: " << conn_url_ << std::endl;
-	proton::connection conn = c.connect(conn_url_);
+
+	proton::connection conn;
+	if(co_set == true) {
+		std::cout << "[AMQPClient] Connecting with user-defined connection options." << std::endl;
+		conn = c.connect(conn_url_,co);
+	} else {
+		std::cout << "[AMQPClient] Connecting with default connection options." << std::endl;
+		conn = c.connect(conn_url_);
+	}
+
 	conn.open_receiver(addr_, proton::receiver_options().source(opts));
 }
 

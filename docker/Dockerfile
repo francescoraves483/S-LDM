@@ -15,6 +15,7 @@ ENV VEHVIZ_UDP_ADDRESS 127.0.0.1
 ENV VEHVIZ_UDP_PORT 48110
 # External mapped web interface port for 5G-CARMEN -> 31128
 ENV VEHVIZ_WEB_PORT 8080
+#ENV SLDM_OTHER_OPTIONS "-u admin -p admin -I"
 
 # Set timezone
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone

@@ -22,6 +22,13 @@
 #define LONGOPT_w "vehviz-web-port"
 #define LONGOPT_L "log-file-name"
 
+// AMQP broker (main)
+#define LONGOPT_u "amqp-1-username"
+#define LONGOPT_p "amqp-1-password"
+#define LONGOPT_R "amqp-1-reconnect"
+#define LONGOPT_S "amqp-1-allow-sasl"
+#define LONGOPT_I "amqp-1-allow-plain"
+
 #define LONGOPT_STR_CONSTRUCTOR(LONGOPT_STR) "  --"LONGOPT_STR"\n"
 
 #define STRINGIFY(value) STR(value)
@@ -43,6 +50,11 @@ static const struct option long_opts[]={
 	{LONGOPT_z,				required_argument,	NULL, 'z'},
 	{LONGOPT_w,				required_argument,	NULL, 'w'},
 	{LONGOPT_L,				required_argument,	NULL, 'L'},
+	{LONGOPT_u,				required_argument,	NULL, 'u'},
+	{LONGOPT_p,				required_argument,	NULL, 'p'},
+	{LONGOPT_R,				no_argument,		NULL, 'R'},
+	{LONGOPT_S,				no_argument,		NULL, 'S'},
+	{LONGOPT_I,				no_argument,		NULL, 'I'},
 	{NULL, 0, NULL, 0}
 };
 
@@ -153,6 +165,26 @@ static void print_short_info_err(struct options *options,char *argv0) {
 	exit(EXIT_SUCCESS);
 }
 
+static void broker_options_inizialize(broker_options_t *broker_options) {
+	broker_options->amqp_username=options_string_declare();
+	broker_options->amqp_password=options_string_declare();
+	broker_options->amqp_reconnect=false;
+	broker_options->amqp_allow_sasl=false;
+	broker_options->amqp_allow_insecure=false;
+
+	broker_options->broker_url=options_string_declare();
+	broker_options->broker_topic=options_string_declare();
+}
+
+static void broker_options_free(broker_options_t *broker_options) {
+	if(broker_options!=NULL) {
+		options_string_free(broker_options->broker_url);
+		options_string_free(broker_options->broker_topic);
+		options_string_free(broker_options->amqp_username);
+		options_string_free(broker_options->amqp_password);
+	}
+}
+
 void options_initialize(struct options *options) {
 	options->init_code=INIT_CODE;
 
@@ -167,8 +199,10 @@ void options_initialize(struct options *options) {
 
 	options->cross_border_trigger=false;
 
-	options->broker_url=options_string_declare();
-	options->broker_topic=options_string_declare();
+	broker_options_inizialize(&options->amqp_broker_one);
+
+	// options->broker_url=options_string_declare();
+	// options->broker_topic=options_string_declare();
 
 	options->ms_rest_addr=options_string_declare();
 	options->ms_rest_port=DEFAULT_MANEUVERING_SERVICE_REST_SRV_PORT;
@@ -243,17 +277,43 @@ unsigned int parse_options(int argc, char **argv, struct options *options) {
 				break;
 
 			case 'U':
-				if(!options_string_push(&(options->broker_url),optarg)) {
+				if(!options_string_push(&(options->amqp_broker_one.broker_url),optarg)) {
 					fprintf(stderr,"Error in parsing the AMQP broker url/address.\n");
 					print_short_info_err(options,argv[0]);
 				}
 				break;
 
 			case 'Q':
-				if(!options_string_push(&(options->broker_topic),optarg)) {
+				if(!options_string_push(&(options->amqp_broker_one.broker_topic),optarg)) {
 					fprintf(stderr,"Error in parsing the AMQP broker queue/topic name.\n");
 					print_short_info_err(options,argv[0]);
 				}
+				break;
+
+			case 'u':
+				if(!options_string_push(&(options->amqp_broker_one.amqp_username),optarg)) {
+					fprintf(stderr,"Error in parsing the AMQP broker username.\n");
+					print_short_info_err(options,argv[0]);
+				}
+				break;
+
+			case 'p':
+				if(!options_string_push(&(options->amqp_broker_one.amqp_password),optarg)) {
+					fprintf(stderr,"Error in parsing the AMQP broker password.\n");
+					print_short_info_err(options,argv[0]);
+				}
+				break;
+
+			case 'R':
+				options->amqp_broker_one.amqp_reconnect=true;
+				break;
+
+			case 'S':
+				options->amqp_broker_one.amqp_allow_sasl=true;
+				break;
+
+			case 'I':
+				options->amqp_broker_one.amqp_allow_insecure=true;
 				break;
 
 			case 'r':
@@ -342,15 +402,15 @@ unsigned int parse_options(int argc, char **argv, struct options *options) {
 
 	// Set the default values for the "options_string" options, if they have not been set before
 	// An unset "options_string" has a length which is <= 0
-	if(options_string_len(options->broker_url)<=0) {
-		if(!options_string_push(&(options->broker_url),DEFAULT_BROKER_URL)) {
+	if(options_string_len(options->amqp_broker_one.broker_url)<=0) {
+		if(!options_string_push(&(options->amqp_broker_one.broker_url),DEFAULT_BROKER_URL)) {
 			fprintf(stderr,"Error! Cannot set the default broker url/address.\nPlease report this bug to the developers.\n");
 			exit(EXIT_FAILURE);
 		}
 	}
 
-	if(options_string_len(options->broker_topic)<=0) {
-		if(!options_string_push(&(options->broker_topic),DEFAULT_BROKER_QUEUE)) {
+	if(options_string_len(options->amqp_broker_one.broker_topic)<=0) {
+		if(!options_string_push(&(options->amqp_broker_one.broker_topic),DEFAULT_BROKER_QUEUE)) {
 			fprintf(stderr,"Error! Cannot set the default broker queue/topic.\nPlease report this bug to the developers.\n");
 			exit(EXIT_FAILURE);
 		}
@@ -408,8 +468,7 @@ void options_free(struct options *options) {
 	// free() (for "manual" malloc()) or with options_string_free() if you are using "options_string"
 	// data structures
 	if(options!=NULL) {
-		options_string_free(options->broker_url);
-		options_string_free(options->broker_topic);
+		broker_options_free(&options->amqp_broker_one);
 		options_string_free(options->ms_rest_addr);
 		options_string_free(options->vehviz_nodejs_addr);
 	}

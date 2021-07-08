@@ -13,9 +13,10 @@ options_string options_string_declare(void) {
 }
 
 void options_string_free(options_string allocated_options_string) {
-	free(allocated_options_string.buf);
-
-	allocated_options_string.len=0;
+	if(allocated_options_string.buf!=NULL) {
+		free(allocated_options_string.buf);
+		allocated_options_string.len=0;
+	}
 }
 
 int options_string_push(options_string *new_options_string, const char *char_buff) {

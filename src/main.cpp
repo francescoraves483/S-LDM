@@ -338,8 +338,22 @@ int main(int argc, char **argv) {
 
 	// Start the AMQP client event loop (for the time being, on loopback, but some options will be added in the future)
 	try {
-		AMQPClient recvClient(std::string(options_string_pop(sldm_opts.broker_url)), std::string(options_string_pop(sldm_opts.broker_topic)), sldm_opts.min_lat, sldm_opts.max_lat, sldm_opts.min_lon, sldm_opts.max_lon, 16, &sldm_opts, db_ptr, logfile_name);
+		AMQPClient recvClient(std::string(options_string_pop(sldm_opts.amqp_broker_one.broker_url)), std::string(options_string_pop(sldm_opts.amqp_broker_one.broker_topic)), sldm_opts.min_lat, sldm_opts.max_lat, sldm_opts.min_lon, sldm_opts.max_lon, 16, &sldm_opts, db_ptr, logfile_name);
 		recvClient.setIndicatorTriggerManager(true);
+
+		// Set username, if specified
+		if(options_string_len(sldm_opts.amqp_broker_one.amqp_username)>0) {
+			recvClient.setUsername(std::string(options_string_pop(sldm_opts.amqp_broker_one.amqp_username)));
+		}
+
+		// Set password, if specified
+		if(options_string_len(sldm_opts.amqp_broker_one.amqp_password)>0) {
+			recvClient.setPassword(std::string(options_string_pop(sldm_opts.amqp_broker_one.amqp_password)));
+		}
+
+		// Set connection options (they all default to "false" - see also options.c/broker_options_inizialize())
+		recvClient.setConnectionOptions(sldm_opts.amqp_broker_one.amqp_allow_sasl,sldm_opts.amqp_broker_one.amqp_allow_insecure,sldm_opts.amqp_broker_one.amqp_reconnect);
+		
 		proton::container(recvClient).run();
 
 		return 0;

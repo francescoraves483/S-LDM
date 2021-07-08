@@ -46,11 +46,22 @@
 // Valid options
 // Any new option should be handled in the switch-case inside parse_options() and the corresponding char should be added to VALID_OPTS
 // If an option accepts an additional argument, it is followed by ':'
-#define VALID_OPTS "hvA:E:F:cU:Q:r:s:Z:z:w:L:"
+#define VALID_OPTS "hvA:E:F:cU:Q:r:s:Z:z:w:L:u:p:RSI"
 
 #define INIT_CODE 0xAE
 
 #define INVALID_LONLAT -DBL_MAX
+
+typedef struct broker_options {
+	options_string amqp_username; // -u option for the main AMQP broker
+	options_string amqp_password; // -p option for the main AMQP broker
+	bool amqp_reconnect; // -R option for the main AMQP broker
+	bool amqp_allow_sasl; // -S option for the main AMQP broker
+	bool amqp_allow_insecure; // -I option for the main AMQP broker
+
+	options_string broker_url; // AMQP broker address (including the port number)
+	options_string broker_topic;
+} broker_options_t;
 
 typedef struct options {
 	// = INIT_CODE if 'struct options' has been initialized via options_initialize()
@@ -67,9 +78,6 @@ typedef struct options {
 
 	bool cross_border_trigger;
 
-	options_string broker_url; // AMQP broker address (including the port number)
-	options_string broker_topic;
-
 	options_string ms_rest_addr; // Maneuvering Service REST Server address (excluding the port number)
 	long ms_rest_port; // Maneuvering Service REST Server port
 
@@ -79,6 +87,8 @@ typedef struct options {
 	long vehviz_web_interface_port; // Port number for the Vehicle Visualizer web interface
 
 	options_string logfile_name; // Name of the log file where performance data should be store (if specified)
+
+	broker_options_t amqp_broker_one; // "one" because we may implement the subscription to multiple brokers in the future
 } options_t;
 
 void options_initialize(struct options *options);
