@@ -55,6 +55,8 @@ namespace ldmmap {
 	    	// or >= time_milliseconds ms if greater_equal == true
 	    	// This function performs a full database read operation
 	    	void deleteOlderThan(double time_milliseconds);
+	    	// This function is a combination of deleteOlderThan() and executeOnAllContents(), calling the open_fcn()
+	    	// callback for every deleted entry
 	    	void deleteOlderThanAndExecute(double time_milliseconds,void (*oper_fcn)(uint64_t,void *),void *additional_args);
 	    	// This function can be used to print all the content of the database
 	    	// The stationIDs of the vehicles stored in the LDMMap database will be printed, preceded by an optional string,
