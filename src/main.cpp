@@ -1,6 +1,7 @@
 #include <atomic>
 #include <iostream>
 #include <unistd.h>
+#include <condition_variable>
 
 #include "LDMmap.h"
 #include "vehicle-visualizer.h"
@@ -23,10 +24,22 @@ extern "C" {
 // Global atomic flag to terminate all the threads in case of errors
 std::atomic<bool> terminatorFlag;
 
+// Global pointer to a visualizer object (to be accessed by both DBcleaner_callback() and VehVizUpdater_callback())
+vehicleVisualizer* globVehVizPtr=nullptr;
+// Global mutex (plus condition variable) to synchronize the threads using the object pointer defined above
+std::mutex syncmtx;
+std::condition_variable synccv;
+
 typedef struct vizOptions {
 	ldmmap::LDMMap *db_ptr;
 	options_t *opts_ptr;
 } vizOptions_t;
+
+void clearVisualizerObject(uint64_t id,void *vizObjVoidPtr) {
+	vehicleVisualizer *vizObjPtr = static_cast<vehicleVisualizer *>(vizObjVoidPtr);
+
+	vizObjPtr->sendObjectClean(std::to_string(id));
+}
 
 void *DBcleaner_callback(void *arg) {
 	// Get the pointer to the database
@@ -44,6 +57,9 @@ void *DBcleaner_callback(void *arg) {
 		pthread_exit(nullptr);
 	}
 
+	std::unique_lock<std::mutex> synclck(syncmtx);
+	synccv.wait(synclck);
+
 	POLL_DEFINE_JUNK_VARIABLE();
 
 	while(terminatorFlag == false) {
@@ -52,7 +68,8 @@ void *DBcleaner_callback(void *arg) {
 
 			// ---- These operations will be performed periodically ----
 
-			db_ptr->deleteOlderThan(DB_DELETE_OLDER_THAN_SECONDS*1e3);
+			// db_ptr->deleteOlderThan(DB_DELETE_OLDER_THAN_SECONDS*1e3);
+			db_ptr->deleteOlderThanAndExecute(DB_DELETE_OLDER_THAN_SECONDS*1e3,clearVisualizerObject,static_cast<void *>(globVehVizPtr));
 
 			// --------
 
@@ -94,6 +111,10 @@ void *VehVizUpdater_callback(void *arg) {
 		vizopts_ptr->opts_ptr->min_lat,vizopts_ptr->opts_ptr->min_lon,
 		vizopts_ptr->opts_ptr->max_lat,vizopts_ptr->opts_ptr->max_lon,
 		vizopts_ptr->opts_ptr->ext_lat_factor,vizopts_ptr->opts_ptr->ext_lon_factor);
+
+	globVehVizPtr=&vehicleVisObj;
+
+	synccv.notify_all();
 
 	// Create a new timer
 	struct pollfd pollfddata;

@@ -117,6 +117,18 @@ socket.on('message', (msg) => {
 					update_marker(leafletmap,msg_fields[1],parseFloat(msg_fields[2]),parseFloat(msg_fields[3]),parseFloat(msg_fields[4]));
 				}
 				break;
+			// "object clean"/vehicle removal message: "objclean,<unique object ID>"
+			case 'objclean':
+				if(msg_fields.length !== 2) {
+					console.error("VehicleVisualizer: Error: received a corrupted object clean message from the server.");
+				} else {
+					let id = parseInt(msg_fields[1]);
+					if(id in markers) {
+						markers[id].remove();
+						delete markers[id];
+					}
+				}
+				break;
 			// This 'case' is added just for additional safety. As the server is shut down every time a "terminate" message
 			// is received from the S-LDM and no "terminate" message is forwarded via socket.io, this point should never be
 			// reached

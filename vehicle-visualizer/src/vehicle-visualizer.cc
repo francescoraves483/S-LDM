@@ -182,6 +182,35 @@ vehicleVisualizer::sendObjectUpdate(std::string objID, double lat, double lon)
 }
 
 int
+vehicleVisualizer::sendObjectClean(std::string objID)
+{
+	if(m_is_connected==false) {
+		std::cerr << "Error: attempted to use a non-connected vehicle visualizer client." << std::endl;
+		exit(EXIT_FAILURE);
+	}
+
+	if(m_is_map_sent==false) {
+		std::cerr << "Error in vehicle visualizer client: attempted to send an object clean message before sending the map draw message." << std::endl;
+		exit(EXIT_FAILURE);
+	}
+
+	std::ostringstream oss;
+	int send_rval=-1;
+
+	oss<<"objclean,"<<objID;
+
+	std::string msg_string = oss.str();
+	char *msg_buffer = new char[msg_string.length()+1];
+	std::copy(msg_string.c_str(), msg_string.c_str() + msg_string.length() + 1, msg_buffer);
+
+	send_rval=send(m_sockfd,msg_buffer,msg_string.length()+1,0);
+
+	delete[] msg_buffer;
+
+	return send_rval;	
+}
+
+int
 vehicleVisualizer::startServer()
 {
 	std::string servercmd;

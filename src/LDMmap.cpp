@@ -173,6 +173,31 @@ namespace ldmmap
 		}
 	}
 
+	void 
+	LDMMap::deleteOlderThanAndExecute(double time_milliseconds,void (*oper_fcn)(uint64_t,void *),void *additional_args) {
+		uint64_t now = get_timestamp_us();
+
+		std::shared_lock<std::shared_mutex> lk(m_mainmapmut);
+
+		for(auto& [key, val] : m_ldmmap) {
+			// Iterate over the single lower maps
+			val.first->lock();
+
+			for (auto mit=val.second.cbegin();mit!=val.second.cend();) {
+				if(((double)(now-mit->second.vehData.timestamp_us))/1000.0 > time_milliseconds) {
+					// With respect to deleteOlderThan(), this function will also call oper_fcn() for each deleted entry
+					oper_fcn(mit->second.vehData.stationID,additional_args);
+					mit = val.second.erase(mit);
+					m_card--;
+				} else {
+					++mit;
+				}
+			}
+
+			val.first->unlock();
+		}
+	}
+
 	void
 	LDMMap::clear() {
 		std::shared_lock<std::shared_mutex> lk(m_mainmapmut);
