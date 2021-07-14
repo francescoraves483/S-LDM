@@ -133,7 +133,7 @@ AMQPClient::on_container_start(proton::container &c) {
 	uint64_t bf = 0.0,af = 0.0;
 
 	if(m_logfile_name!="") {
-		bf=get_timestamp_us();
+		bf=get_timestamp_ns();
 	}
 
 	if(ifile.is_open()) {
@@ -227,11 +227,11 @@ AMQPClient::on_container_start(proton::container &c) {
 	}
 
 	if(m_logfile_name!="") {
-		af=get_timestamp_us();
+		af=get_timestamp_ns();
 
-		fprintf(m_logfile_file,"[LOG - AMQP STARTUP] Area=%.7lf:%.7lf-%.7lf:%7lf QKCacheFileFound=%d ProcTimeMilliseconds=%.3lf\n",
+		fprintf(m_logfile_file,"[LOG - AMQP STARTUP] Area=%.7lf:%.7lf-%.7lf:%7lf QKCacheFileFound=%d ProcTimeMilliseconds=%.6lf\n",
 			min_latitude,min_longitude,max_latitude,max_longitude,
-			cache_file_found,(af-bf)/1000.0);
+			cache_file_found,(af-bf)/1000000.0);
 	}
 
 	std::cout << "[AMQPClient] Connecting to AMQP broker at: " << conn_url_ << std::endl;
@@ -256,9 +256,10 @@ AMQPClient::on_message(proton::delivery &d, proton::message &msg) {
 	uint64_t main_bf = 0.0,main_af = 0.0;
 
 	if(m_logfile_name!="") {
-		main_bf=get_timestamp_us();
+		main_bf=get_timestamp_ns();
 
-		fprintf(m_logfile_file,"[NEW MESSAGE RX]\n");
+		// This additional log line has been commented out to avoid being too verbose
+		// fprintf(m_logfile_file,"[NEW MESSAGE RX]\n");
 	}
 
 	if(m_printMsg == true) {
@@ -284,7 +285,7 @@ AMQPClient::on_message(proton::delivery &d, proton::message &msg) {
 	}
 
 	if(m_logfile_name!="") {
-		bf=get_timestamp_us();
+		bf=get_timestamp_ns();
 	}
 
 	// Decode the content of the message, using the decoder-module frontend class
@@ -294,9 +295,9 @@ AMQPClient::on_message(proton::delivery &d, proton::message &msg) {
 	}
 
 	if(m_logfile_name!="") {
-		af=get_timestamp_us();
+		af=get_timestamp_ns();
 
-		fprintf(m_logfile_file,"[LOG - MESSAGE DECODER] ProcTimeMilliseconds=%.3lf\n",(af-bf)/1000.0);
+		fprintf(m_logfile_file,"[LOG - MESSAGE DECODER] ProcTimeMilliseconds=%.6lf\n",(af-bf)/1000000.0);
 	}
 
 	// If a CAM has been received, it should be used to update the internal in-memory database
@@ -311,7 +312,7 @@ AMQPClient::on_message(proton::delivery &d, proton::message &msg) {
 		// using the areaFilter module (which can access the command line options, thus also the coverage area
 		// specified by the user)
 		if(m_logfile_name!="") {
-			bf=get_timestamp_us();
+			bf=get_timestamp_ns();
 		}
 
 		if(m_areaFilter.isInside(lat,lon)==false) {
@@ -319,13 +320,13 @@ AMQPClient::on_message(proton::delivery &d, proton::message &msg) {
 		}
 
 		if(m_logfile_name!="") {
-			af=get_timestamp_us();
+			af=get_timestamp_ns();
 
-			fprintf(m_logfile_file,"[LOG - AREA FILTER] ProcTimeMilliseconds=%.3lf\n",(af-bf)/1000.0);
+			fprintf(m_logfile_file,"[LOG - AREA FILTER] ProcTimeMilliseconds=%.6lf\n",(af-bf)/1000000.0);
 		}
 
 		if(m_logfile_name!="") {
-			bf=get_timestamp_us();
+			bf=get_timestamp_ns();
 		}
 
 		// Update the database
@@ -397,16 +398,16 @@ AMQPClient::on_message(proton::delivery &d, proton::message &msg) {
 		}
 
 		if(m_logfile_name!="") {
-			af=get_timestamp_us();
+			af=get_timestamp_ns();
 
-			fprintf(m_logfile_file,"[LOG - DATABASE UPDATE] LowFrequencyContainerAvail=%d InsertReturnValue=%d ProcTimeMilliseconds=%.3lf\n",
+			fprintf(m_logfile_file,"[LOG - DATABASE UPDATE] LowFrequencyContainerAvail=%d InsertReturnValue=%d ProcTimeMilliseconds=%.6lf\n",
 				decoded_cam->cam.camParameters.highFrequencyContainer.choice.basicVehicleContainerHighFrequency.vehicleWidth != VehicleWidth_unavailable,
 				db_retval,
-				(af-bf)/1000.0);
+				(af-bf)/1000000.0);
 		}
 
 		if(m_logfile_name!="") {
-			bf=get_timestamp_us();
+			bf=get_timestamp_ns();
 		}
 
 		// If a trigger manager has been enabled, check if any triggering condition has occurred (for the time being, only a simple trigger manager based on turn indicators has been developed)
@@ -420,30 +421,28 @@ AMQPClient::on_message(proton::delivery &d, proton::message &msg) {
 		}
 
 		if(m_logfile_name!="") {
-			af=get_timestamp_us();
+			af=get_timestamp_ns();
 
-			fprintf(m_logfile_file,"[LOG - TRIGGER CHECK] TriggerEnabled=%d ExteriorLightsAvail=%d CrossBrdTriggerMode=%d IsInsideInternalArea=%d ProcTimeMilliseconds=%.3lf\n",
+			fprintf(m_logfile_file,"[LOG - TRIGGER CHECK] TriggerEnabled=%d ExteriorLightsAvail=%d CrossBrdTriggerMode=%d IsInsideInternalArea=%d ProcTimeMilliseconds=%.6lf\n",
 				m_indicatorTrgMan_enabled,
 				vehdata.exteriorLights.isAvailable(),
 				m_opts_ptr->cross_border_trigger,
 				m_areaFilter.isInsideInternal(lat,lon),
-				(af-bf)/1000.0);
+				(af-bf)/1000000.0);
 		}
 
 		ASN_STRUCT_FREE(asn_DEF_CAM,decoded_cam);
 
 		if(m_logfile_name!="") {
-			main_af=get_timestamp_us();
+			main_af=get_timestamp_ns();
 
 			fprintf(m_logfile_file,"[LOG - FULL CAM PROCESSING] StationID=%u Coordinates=%.7lf:%.7lf InstUpdatePeriod=%.3lf"
 				" CAMTimestamp=%ld GNTimestamp=%lu CAMTimestampDiff=%ld GNTimestampDiff=%ld"
-				" ProcTimeMilliseconds=%.3lf\n",
+				" ProcTimeMilliseconds=%.6lf\n",
 				stationID,lat,lon,
 				l_inst_period,
 				vehdata.camTimestamp,vehdata.gnTimestamp,get_timestamp_ms_cam()-vehdata.camTimestamp,get_timestamp_ms_gn()-vehdata.gnTimestamp,
-				(main_af-main_bf)/1000.0);
-
-			fprintf(stdout,"ETSI TS 102 894-2: %ld\n",get_timestamp_ms_gn());		
+				(main_af-main_bf)/1000000.0);	
 		}
 
 	} else {

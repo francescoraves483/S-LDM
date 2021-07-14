@@ -27,6 +27,17 @@ uint64_t get_timestamp_us(void) {
 	return seconds*1000000+microseconds;
 }
 
+uint64_t get_timestamp_ns(void) {
+	struct timespec now;
+
+	if(clock_gettime(CLOCK_REALTIME, &now) == -1) {
+		perror("Cannot get the current nanosecond UTC timestamp");
+		return -1;
+	}
+
+	return now.tv_sec*1000000000+now.tv_nsec;
+}
+
 uint64_t get_timestamp_ms_gn(void) {
 	time_t seconds;
 	uint64_t microseconds;

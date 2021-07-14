@@ -59,9 +59,12 @@ namespace etsiDecoder {
             std::cerr<< "[ERROR] [Decoder] Incorrect version of GN protocol" << std::endl;
             return GN_VERSION_ERROR;
 
-        } else if(basicH.GetVersion() == 0) {
-            std::cerr<< "[WARN] [Decoder] Unexpected GeoNetworking version \"0\"" << std::endl;
-        }
+        } 
+        // This warning can be useful, but, as in the 5G-CARMEN tests all the packets have a GeoNetworking version equal to "0",
+        // it has been commented out not to make the logs grow too much
+        // else if(basicH.GetVersion() == 0) {
+            // std::cerr<< "[WARN] [Decoder] Unexpected GeoNetworking version \"0\"" << std::endl;
+        // }
         //2)Check NH field
         if(basicH.GetNextHeader()==2) //a) if NH=0 or NH=1 proceed with common header procesing
         {
