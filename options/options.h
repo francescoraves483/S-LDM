@@ -30,7 +30,7 @@
 #include "options_strings.h"
 
 // Insert here the version string
-#define VERSION_STR "S-LDM 0.2.4-beta"
+#define VERSION_STR "S-LDM 0.2.5-beta"
 
 #define DEFAULT_BROKER_URL "127.0.0.1:5672"
 #define DEFAULT_BROKER_QUEUE "topic://5gcarmen.examples"
@@ -98,6 +98,8 @@ typedef struct options {
 
 	double context_radius; // Radius (in m) of the "context" around a triggering vehicle (used for the time being only when sending the data to the Maneuvering Service through the simple indicatorTriggerManager)
 	double vehviz_update_interval_sec; // Advanced option: modifies the update rate of the web-based GUI. Warning: decreasing this too much will affect performance! This value cannot be less than 0.05 s and more than 1 s.
+
+	bool indicatorTrgMan_enabled; // 'true' if the turn indicator trigger manager is enabled (default option), 'false' otherwise
 } options_t;
 
 void options_initialize(struct options *options);

@@ -33,8 +33,10 @@
 
 // Long-only options
 #define LONGOPT_vehviz_update_interval_sec "vehviz-update-interval"
+#define LONGOPT_indicator_trgman_disable "indicator-trgman-disable"
 // The corresponding "val"s are used internally and they should be set as sequential integers starting from 256
 #define LONGOPT_vehviz_update_interval_sec_val 256
+#define LONGOPT_indicator_trgman_disable_val 257
 
 
 #define LONGOPT_STR_CONSTRUCTOR(LONGOPT_STR) "  --"LONGOPT_STR"\n"
@@ -66,6 +68,7 @@ static const struct option long_opts[]={
 	{LONGOPT_C,				required_argument,	NULL, 'C'},
 
 	{LONGOPT_vehviz_update_interval_sec,	required_argument,	NULL, LONGOPT_vehviz_update_interval_sec_val},
+	{LONGOPT_indicator_trgman_disable,		no_argument,		NULL, LONGOPT_indicator_trgman_disable_val},
 
 	{NULL, 0, NULL, 0}
 };
@@ -149,11 +152,14 @@ static const struct option long_opts[]={
 	"\t  Default: (150).\n"
 
 #define OPT_vehviz_update_interval_sec_description \
-	"  --"LONGOPT_vehviz_update_interval_sec" <interval in seconds>: this option can be used to\n" \
+	"  --"LONGOPT_vehviz_update_interval_sec" <interval in seconds>: advanced option: this option can be used to\n" \
 	"\t  modify the update rate of the web-based GUI. \n" \
-	"\t  Warning: decreasing this too much will affect the S-LDM database performance!\n" \
-	"\t  This value cannot be less than 0.05 s and more than 1 s. Default: ("STRINGIFY(VEHVIZ_UPDATE_INTERVAL_SECONDS)")\n"
+	"\t  Warning: decreasing too much this value will affect the S-LDM database performance!\n" \
+	"\t  This value cannot be less than 0.05 s and more than 1 s. Default: ("STRINGIFY(DEFAULT_VEHVIZ_UPDATE_INTERVAL_SECONDS)")\n"
 
+#define OPT_indicator_trgman_disable_description \
+	"  --"LONGOPT_indicator_trgman_disable": advanced option: disable the indicator trigger manager and\n" \
+	"\t  the transmission of data to the Maneuvering Service via the REST API.\n"
 
 static void print_long_info(char *argv0) {
 	fprintf(stdout,"\nUsage: %s [-A S-LDM coverage internal area] [options]\n"
@@ -175,6 +181,7 @@ static void print_long_info(char *argv0) {
 		OPT_L_description
 		OPT_C_description
 		OPT_vehviz_update_interval_sec_description
+		OPT_indicator_trgman_disable_description
 		,
 		argv0,argv0,argv0);
 
@@ -244,6 +251,8 @@ void options_initialize(struct options *options) {
 
 	options->context_radius=DEFAULT_CONTEXT_RADIUS_METERS;
 	options->vehviz_update_interval_sec=DEFAULT_VEHVIZ_UPDATE_INTERVAL_SECONDS;
+
+	options->indicatorTrgMan_enabled=true;
 }
 
 unsigned int parse_options(int argc, char **argv, struct options *options) {
@@ -434,6 +443,10 @@ unsigned int parse_options(int argc, char **argv, struct options *options) {
 					fprintf(stderr,"Error in parsing the update rate for the web-based GUI. Remember that it must be within [0.05,1] seconds.\n");
 					print_short_info_err(options,argv[0]);
 				}
+				break;
+
+			case LONGOPT_indicator_trgman_disable_val:
+				options->indicatorTrgMan_enabled=false;
 				break;
 
 			case 'v':
