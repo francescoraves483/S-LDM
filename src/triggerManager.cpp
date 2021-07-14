@@ -24,6 +24,8 @@ bool indicatorTriggerManager::checkAndTrigger(double lat, double lon, uint64_t r
 			ManeuveringServiceRestClient *ms_restclient = 
 				new(std::nothrow) ManeuveringServiceRestClient(refVehStationID,m_db_ptr,std::string(options_string_pop(m_opts_ptr->ms_rest_addr)),m_opts_ptr->ms_rest_port);
 
+			ms_restclient->changeContextRange(m_opts_ptr->context_radius);
+
 			if(ms_restclient!=nullptr) {
 				ms_restclient->setNotifyFunction(std::bind(&indicatorTriggerManager::notifyOpTermination,this,std::placeholders::_1));
 

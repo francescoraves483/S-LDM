@@ -21,6 +21,7 @@
 #define LONGOPT_z "vehviz-nodejs-port"
 #define LONGOPT_w "vehviz-web-port"
 #define LONGOPT_L "log-file-name"
+#define LONGOPT_C "context-radius"
 
 // AMQP broker (main)
 #define LONGOPT_u "amqp-1-username"
@@ -28,6 +29,13 @@
 #define LONGOPT_R "amqp-1-reconnect"
 #define LONGOPT_S "amqp-1-allow-sasl"
 #define LONGOPT_I "amqp-1-allow-plain"
+
+
+// Long-only options
+#define LONGOPT_vehviz_update_interval_sec "vehviz-update-interval"
+// The corresponding "val"s are used internally and they should be set as sequential integers starting from 256
+#define LONGOPT_vehviz_update_interval_sec_val 256
+
 
 #define LONGOPT_STR_CONSTRUCTOR(LONGOPT_STR) "  --"LONGOPT_STR"\n"
 
@@ -55,6 +63,10 @@ static const struct option long_opts[]={
 	{LONGOPT_R,				no_argument,		NULL, 'R'},
 	{LONGOPT_S,				no_argument,		NULL, 'S'},
 	{LONGOPT_I,				no_argument,		NULL, 'I'},
+	{LONGOPT_C,				required_argument,	NULL, 'C'},
+
+	{LONGOPT_vehviz_update_interval_sec,	required_argument,	NULL, LONGOPT_vehviz_update_interval_sec_val},
+
 	{NULL, 0, NULL, 0}
 };
 
@@ -128,6 +140,20 @@ static const struct option long_opts[]={
 	"  -L: enable log mode and set the name of the textual file where the data will be saved.\n" \
 	"\t  'stdout' can be specified to output the log data on the screen. Default: (disabled).\n"
 
+#define OPT_C_description \
+	LONGOPT_STR_CONSTRUCTOR(LONGOPT_C) \
+	"  -C <radius in m>: set the radius, in m, of the context around the triggering vehicle.\n" \
+	"\t  The \"context\" contains the information of all the vehicles within a certain radius around\n" \
+	"\t  the triggering vehicle.\n" \
+	"\t  This option currently affects only the data transmission to the Maneuvering Service.\n" \
+	"\t  Default: (150).\n"
+
+#define OPT_vehviz_update_interval_sec_description \
+	"  --"LONGOPT_vehviz_update_interval_sec" <interval in seconds>: this option can be used to\n" \
+	"\t  modify the update rate of the web-based GUI. \n" \
+	"\t  Warning: decreasing this too much will affect the S-LDM database performance!\n" \
+	"\t  This value cannot be less than 0.05 s and more than 1 s. Default: ("STRINGIFY(VEHVIZ_UPDATE_INTERVAL_SECONDS)")\n"
+
 
 static void print_long_info(char *argv0) {
 	fprintf(stdout,"\nUsage: %s [-A S-LDM coverage internal area] [options]\n"
@@ -147,6 +173,8 @@ static void print_long_info(char *argv0) {
 		OPT_z_description
 		OPT_w_description
 		OPT_L_description
+		OPT_C_description
+		OPT_vehviz_update_interval_sec_description
 		,
 		argv0,argv0,argv0);
 
@@ -213,6 +241,9 @@ void options_initialize(struct options *options) {
 	options->vehviz_web_interface_port=DEFAULT_VEHVIZ_WEB_PORT;
 
 	options->logfile_name=options_string_declare();
+
+	options->context_radius=DEFAULT_CONTEXT_RADIUS_METERS;
+	options->vehviz_update_interval_sec=DEFAULT_VEHVIZ_UPDATE_INTERVAL_SECONDS;
 }
 
 unsigned int parse_options(int argc, char **argv, struct options *options) {
@@ -375,6 +406,32 @@ unsigned int parse_options(int argc, char **argv, struct options *options) {
 			case 'L':
 				if(!options_string_push(&(options->logfile_name),optarg)) {
 					fprintf(stderr,"Error in parsing the log file name: %s.\n",optarg);
+					print_short_info_err(options,argv[0]);
+				}
+				break;
+
+			case 'C':
+				errno=0; // Setting errno to 0 as suggested in the strtod() man page
+				options->context_radius=strtod(optarg,&sPtr);
+
+				if(sPtr==optarg) {
+					fprintf(stderr,"Cannot find any digit in the specified value (-C/" LONGOPT_C ").\n");
+					print_short_info_err(options,argv[0]);
+				} else if(errno || options->context_radius<MINIMUM_CONTEXT_RADIUS_METERS) {
+					fprintf(stderr,"Error in parsing the context radius (it cannot be lower than 10 meters).\n");
+					print_short_info_err(options,argv[0]);
+				}
+				break;
+
+			case LONGOPT_vehviz_update_interval_sec_val:
+				errno=0; // Setting errno to 0 as suggested in the strtod() man page
+				options->vehviz_update_interval_sec=strtod(optarg,&sPtr);
+
+				if(sPtr==optarg) {
+					fprintf(stderr,"Cannot find any digit in the specified value (--" LONGOPT_vehviz_update_interval_sec ").\n");
+					print_short_info_err(options,argv[0]);
+				} else if(errno || options->vehviz_update_interval_sec<0.05 || options->vehviz_update_interval_sec>1.0) {
+					fprintf(stderr,"Error in parsing the update rate for the web-based GUI. Remember that it must be within [0.05,1] seconds.\n");
 					print_short_info_err(options,argv[0]);
 				}
 				break;

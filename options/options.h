@@ -30,7 +30,7 @@
 #include "options_strings.h"
 
 // Insert here the version string
-#define VERSION_STR "S-LDM 0.2.3-beta"
+#define VERSION_STR "S-LDM 0.2.4-beta"
 
 #define DEFAULT_BROKER_URL "127.0.0.1:5672"
 #define DEFAULT_BROKER_QUEUE "topic://5gcarmen.examples"
@@ -43,10 +43,16 @@
 
 #define DEFAULT_VEHVIZ_WEB_PORT 8080
 
+#define DEFAULT_CONTEXT_RADIUS_METERS 150.0
+#define MINIMUM_CONTEXT_RADIUS_METERS 10.0
+
+// Default Vehicle Visualizer web-based GUI update rate, in seconds
+#define DEFAULT_VEHVIZ_UPDATE_INTERVAL_SECONDS 0.5
+
 // Valid options
 // Any new option should be handled in the switch-case inside parse_options() and the corresponding char should be added to VALID_OPTS
 // If an option accepts an additional argument, it is followed by ':'
-#define VALID_OPTS "hvA:E:F:cU:Q:r:s:Z:z:w:L:u:p:RSI"
+#define VALID_OPTS "hvA:E:F:cU:Q:r:s:Z:z:w:L:u:p:RSIC:"
 
 #define INIT_CODE 0xAE
 
@@ -89,6 +95,9 @@ typedef struct options {
 	options_string logfile_name; // Name of the log file where performance data should be store (if specified)
 
 	broker_options_t amqp_broker_one; // "one" because we may implement the subscription to multiple brokers in the future
+
+	double context_radius; // Radius (in m) of the "context" around a triggering vehicle (used for the time being only when sending the data to the Maneuvering Service through the simple indicatorTriggerManager)
+	double vehviz_update_interval_sec; // Advanced option: modifies the update rate of the web-based GUI. Warning: decreasing this too much will affect performance! This value cannot be less than 0.05 s and more than 1 s.
 } options_t;
 
 void options_initialize(struct options *options);

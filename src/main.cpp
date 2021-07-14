@@ -19,7 +19,6 @@ extern "C" {
 
 #define DB_CLEANER_INTERVAL_SECONDS 5
 #define DB_DELETE_OLDER_THAN_SECONDS 7
-#define VEHVIZ_UPDATE_INTERVAL_SECONDS 0.5
 
 // Global atomic flag to terminate all the threads in case of errors
 std::atomic<bool> terminatorFlag;
@@ -120,9 +119,9 @@ void *VehVizUpdater_callback(void *arg) {
 	struct pollfd pollfddata;
 	int clockFd;
 
-	std::cout << "[INFO] Vehicle visualizer updater started. Updated every " << VEHVIZ_UPDATE_INTERVAL_SECONDS << " seconds." << std::endl;
+	std::cout << "[INFO] Vehicle visualizer updater started. Updated every " << vizopts_ptr->opts_ptr->vehviz_update_interval_sec << " seconds." << std::endl;
 
-	if(timer_fd_create(pollfddata, clockFd, VEHVIZ_UPDATE_INTERVAL_SECONDS*1e6)<0) {
+	if(timer_fd_create(pollfddata, clockFd, vizopts_ptr->opts_ptr->vehviz_update_interval_sec*1e6)<0) {
 		std::cerr << "[ERROR] Fatal error! Cannot create timer for the Vehicle Visualizer update thread!" << std::endl;
 		terminatorFlag = true;
 		pthread_exit(nullptr);
