@@ -140,6 +140,7 @@ web::json::value ManeuveringServiceRestClient::make_SLDM_json(int eventID) {
 			vehdata.vehData.vehicleWidth,
 			vehdata.vehData.speed_ms,
 			vehdata.phData,
+			vehdata.vehData.sourceQuadkey,
 			refRelDist);
 
 		idx++;
@@ -150,7 +151,7 @@ web::json::value ManeuveringServiceRestClient::make_SLDM_json(int eventID) {
 	return sldm_json;
 }
 
-web::json::value ManeuveringServiceRestClient::make_vehicle(uint64_t stationID, 
+web::json::value ManeuveringServiceRestClient::make_vehicle(uint64_t stationID,
 	double lat, 
 	double lon, 
 	std::string turnindicator,
@@ -160,6 +161,7 @@ web::json::value ManeuveringServiceRestClient::make_vehicle(uint64_t stationID,
 	ldmmap::OptionalDataItem<long> car_width_mm,
 	double speed_ms,
 	ldmmap::PHpoints *path_history,
+	std::string &src_quadk,
 	double relative_dist_m
 	) {
 
@@ -173,6 +175,7 @@ web::json::value ManeuveringServiceRestClient::make_vehicle(uint64_t stationID,
 	vehicle["CAM_tstamp"] = MAKE_NUM(CAM_tstamp);
 	vehicle["GN_tstamp"] = MAKE_NUM(GN_tstamp);
 	vehicle["relative_dist_to_reference_m"] = MAKE_NUM(relative_dist_m);
+	vehicle["sourceQuadkey"] = MAKE_STR(src_quadk);
 
 	if(car_length_mm.isAvailable()) {
 		vehicle["car_len_mm"] = MAKE_NUM(car_length_mm.getData());

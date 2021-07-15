@@ -342,6 +342,15 @@ AMQPClient::on_message(proton::delivery &d, proton::message &msg) {
 		vehdata.stationID = stationID; // It is very important to save also the stationID
 		vehdata.camTimestamp = static_cast<long>(decoded_cam->cam.generationDeltaTime);
 
+		// Save also the source vehicle quadkey
+		proton::scalar quadkey_prop = msg.properties().get("quadkeys");
+
+		if(quadkey_prop.type() == proton::STRING) {
+			vehdata.sourceQuadkey = proton::get<std::string>(quadkey_prop);
+		} else {
+			vehdata.sourceQuadkey="";
+		}
+
 		if(decoded_cam->cam.camParameters.highFrequencyContainer.choice.basicVehicleContainerHighFrequency.vehicleWidth != VehicleWidth_unavailable) {
 			vehdata.vehicleWidth = ldmmap::OptionalDataItem<long>(decoded_cam->cam.camParameters.highFrequencyContainer.choice.basicVehicleContainerHighFrequency.vehicleWidth*100);
 		} else {

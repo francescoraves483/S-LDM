@@ -43,6 +43,8 @@ namespace ldmmap {
 		OptionalDataItem<long> vehicleWidth;
 		OptionalDataItem<long> vehicleLength;
 
+		std::string sourceQuadkey;
+
 		// Low frequency container data
 		OptionalDataItem<uint8_t> exteriorLights; // Bit string with exterior lights status
 	} vehicleData_t;

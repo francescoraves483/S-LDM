@@ -56,6 +56,7 @@ class ManeuveringServiceRestClient {
 			ldmmap::OptionalDataItem<long> car_width_mm,
 			double speed_ms,
 			ldmmap::PHpoints *path_history,
+			std::string &src_quadk,
 			double relative_dist_m
 			);
 
