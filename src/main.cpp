@@ -87,7 +87,7 @@ void *DBcleaner_callback(void *arg) {
 void updateVisualizer(ldmmap::vehicleData_t vehdata,void *vizObjVoidPtr) {
 	vehicleVisualizer *vizObjPtr = static_cast<vehicleVisualizer *>(vizObjVoidPtr);
 
-	vizObjPtr->sendObjectUpdate(std::to_string(vehdata.stationID),vehdata.lat,vehdata.lon,vehdata.heading);
+	vizObjPtr->sendObjectUpdate(std::to_string(vehdata.stationID),vehdata.lat,vehdata.lon,static_cast<int>(vehdata.stationType),vehdata.heading);
 }
 
 void *VehVizUpdater_callback(void *arg) {

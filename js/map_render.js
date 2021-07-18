@@ -14,6 +14,7 @@ const VIS_HEADING_INVALID = 361;
 // Car and circle icon indeces
 const CAR_ICO_IDX = 0;
 const CIRCLE_ICO_IDX = 1;
+const GREEN_CIRCLE_ICO_IDX = 2;
 
 // Start socket.io()
 const socket = io();
@@ -33,6 +34,8 @@ var icon_length = 102;
 var icon_height = 277;
 var icon_length_circle = 144;
 var icon_height_circle = 143;
+var icon_length_circle_green = 94;
+var icon_height_circle_green = 94;
 var icon_scale_factor = 11;
 var carIcon = L.icon({
 	iconUrl: './img/triangle.png',
@@ -47,6 +50,14 @@ var circleIcon = L.icon({
 
 	iconSize:     [icon_length_circle/icon_scale_factor, icon_height_circle/icon_scale_factor], // size of the icon
 	iconAnchor:   [icon_length_circle/(icon_scale_factor*2), icon_height_circle/(icon_scale_factor*2)], // point of the icon which will correspond to marker's location
+	popupAnchor:  [0, 0] // point from which the popup should open relative to the iconAnchor
+});
+
+var greenCircleIcon = L.icon({
+	iconUrl: './img/green_circle.png',
+
+	iconSize:     [icon_length_circle_green/icon_scale_factor, icon_height_circle_green/icon_scale_factor], // size of the icon
+	iconAnchor:   [icon_length_circle_green/(icon_scale_factor*2), icon_height_circle_green/(icon_scale_factor*2)], // point of the icon which will correspond to marker's location
 	popupAnchor:  [0, 0] // point from which the popup should open relative to the iconAnchor
 });
 
@@ -109,12 +120,12 @@ socket.on('message', (msg) => {
 					}
 				}
 				break;
-			// "object update"/vehicle update message: "object,<unique object ID>,<lat>,<lon>,<heading>"
+			// "object update"/vehicle update message: "object,<unique object ID>,<lat>,<lon>,<stationtype>,<heading>"
 			case 'object':
-				if(msg_fields.length !== 5) {
+				if(msg_fields.length !== 6) {
 					console.error("VehicleVisualizer: Error: received a corrupted object update message from the server.");
 				} else {
-					update_marker(leafletmap,msg_fields[1],parseFloat(msg_fields[2]),parseFloat(msg_fields[3]),parseFloat(msg_fields[4]));
+					update_marker(leafletmap,msg_fields[1],parseFloat(msg_fields[2]),parseFloat(msg_fields[3]),parseInt(msg_fields[4]),parseFloat(msg_fields[5]));
 				}
 				break;
 			// "object clean"/vehicle removal message: "objclean,<unique object ID>"
@@ -143,7 +154,7 @@ socket.on('message', (msg) => {
 });
 
 // This function is used to update the position (and heading/rotation) of a marker/moving object on the map
-function update_marker(mapref,id,lat,lon,heading)
+function update_marker(mapref,id,lat,lon,stationtype,heading)
 {
 	if(mapref == null) {
 		console.error("VehicleVisualizer: null map reference when attempting to update an object")
@@ -154,13 +165,18 @@ function update_marker(mapref,id,lat,lon,heading)
 			let initial_icon;
 			let initial_icon_idx;
 
-			// Set a circular icon when the heading is not available, otherwise use the regular carIcon (i.e. for the time being, a triangle)
-			if(heading >= VIS_HEADING_INVALID) {
-				initial_icon = circleIcon;
-				initial_icon_idx = CIRCLE_ICO_IDX;
+			if(stationtype === 0) {
+				initial_icon = greenCircleIcon;
+				initial_icon_idx = GREEN_CIRCLE_ICO_IDX;
 			} else {
-				initial_icon = carIcon;
-				initial_icon_idx = CAR_ICO_IDX;
+				// Set a circular icon when the heading is not available, otherwise use the regular carIcon (i.e. for the time being, a triangle)
+				if(heading >= VIS_HEADING_INVALID) {
+					initial_icon = circleIcon;
+					initial_icon_idx = CIRCLE_ICO_IDX;
+				} else {
+					initial_icon = carIcon;
+					initial_icon_idx = CAR_ICO_IDX;
+				}
 			}
 
 			// Attempt to use an icon marker
@@ -190,14 +206,21 @@ function update_marker(mapref,id,lat,lon,heading)
 				marker.setPopupContent("ID: "+id+" - Heading: "+heading+" deg");
 			}
 
-			// If the heading becomes unavailable or invalid (but it was not before), change the icon of the vehicle to a circle
-			if(heading >= VIS_HEADING_INVALID && markersicons[id] === CAR_ICO_IDX) {
-				marker.setIcon(circleIcon);
-				markersicons[id] = CIRCLE_ICO_IDX;
-			// If the heading becomes available after being unavailable, change the icon of the vehicle to the "car" icon
-			} else if(heading < VIS_HEADING_INVALID && markersicons[id] === CIRCLE_ICO_IDX) {
-				marker.setIcon(carIcon);
-				markersicons[id] = CAR_ICO_IDX;
+			if(stationtype !== 0) {
+				// If the heading becomes unavailable or invalid (but it was not before), change the icon of the vehicle to a circle
+				if(heading >= VIS_HEADING_INVALID && (markersicons[id] === CAR_ICO_IDX || markersicons[id] === GREEN_CIRCLE_ICO_IDX)) {
+					marker.setIcon(circleIcon);
+					markersicons[id] = CIRCLE_ICO_IDX;
+				// If the heading becomes available after being unavailable, change the icon of the vehicle to the "car" icon
+				} else if(heading < VIS_HEADING_INVALID && (markersicons[id] === CIRCLE_ICO_IDX || markersicons[id] === GREEN_CIRCLE_ICO_IDX)) {
+					marker.setIcon(carIcon);
+					markersicons[id] = CAR_ICO_IDX;
+				}
+			} else {
+				if(markersicons[id] === CAR_ICO_IDX || markersicons[id] === CIRCLE_ICO_IDX) {
+					marker.setIcon(greenCircleIcon);
+					markersicons[id] = GREEN_CIRCLE_ICO_IDX;
+				}
 			}
 		}
 	}

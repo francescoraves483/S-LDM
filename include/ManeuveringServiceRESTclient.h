@@ -57,7 +57,8 @@ class ManeuveringServiceRestClient {
 			double speed_ms,
 			ldmmap::PHpoints *path_history,
 			std::string &src_quadk,
-			double relative_dist_m
+			double relative_dist_m,
+			ldmmap::e_StationTypeLDM stationType
 			);
 
 		const double m_range_m_default = 100.0;

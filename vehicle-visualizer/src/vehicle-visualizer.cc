@@ -144,7 +144,7 @@ vehicleVisualizer::sendMapDraw(double lat, double lon, double minlat, double min
 }
 
 int
-vehicleVisualizer::sendObjectUpdate(std::string objID, double lat, double lon, double heading)
+vehicleVisualizer::sendObjectUpdate(std::string objID, double lat, double lon, int stationType, double heading)
 {
 	if(m_is_connected==false) {
 		std::cerr << "Error: attempted to use a non-connected vehicle visualizer client." << std::endl;
@@ -160,7 +160,7 @@ vehicleVisualizer::sendObjectUpdate(std::string objID, double lat, double lon, d
 	int send_rval=-1;
 
 	oss.precision(7);
-	oss<<"object,"<<objID<<","<<lat<<","<<lon<<",";
+	oss<<"object,"<<objID<<","<<lat<<","<<lon<<","<<stationType<<",";
 	oss.precision(3);
 	oss<<heading;
 
@@ -176,9 +176,9 @@ vehicleVisualizer::sendObjectUpdate(std::string objID, double lat, double lon, d
 }
 
 int
-vehicleVisualizer::sendObjectUpdate(std::string objID, double lat, double lon)
+vehicleVisualizer::sendObjectUpdate(std::string objID, double lat, double lon, int stationType)
 {
-	return sendObjectUpdate (objID,lat,lon,VIS_HEADING_INVALID);
+	return sendObjectUpdate (objID,lat,lon,stationType,VIS_HEADING_INVALID);
 }
 
 int

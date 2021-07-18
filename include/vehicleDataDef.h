@@ -29,6 +29,23 @@ namespace ldmmap {
 			T setData(T data) {m_dataitem=data; m_available=true;}
 	};
 
+	typedef enum StationTypeLDM {
+		StationType_LDM_unknown = 0,
+		StationType_LDM_pedestrian = 1,
+		StationType_LDM_cyclist	= 2,
+		StationType_LDM_moped = 3,
+		StationType_LDM_motorcycle = 4,
+		StationType_LDM_passengerCar = 5,
+		StationType_LDM_bus	= 6,
+		StationType_LDM_lightTruck = 7,
+		StationType_LDM_heavyTruck = 8,
+		StationType_LDM_trailer = 9,
+		StationType_LDM_specialVehicles	= 10,
+		StationType_LDM_tram = 11,
+		StationType_LDM_roadSideUnit = 15,
+		StationType_LDM_unspecified= 99
+	} e_StationTypeLDM;
+
 	// This structure contains all the data stored in the database for each vehicle (except for the PHPoints)
 	typedef struct vehicleData {
 		uint64_t stationID;
@@ -42,6 +59,7 @@ namespace ldmmap {
 		uint64_t timestamp_us;
 		OptionalDataItem<long> vehicleWidth;
 		OptionalDataItem<long> vehicleLength;
+		e_StationTypeLDM stationType;
 
 		std::string sourceQuadkey;
 

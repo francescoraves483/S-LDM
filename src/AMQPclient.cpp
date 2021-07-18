@@ -342,6 +342,7 @@ AMQPClient::on_message(proton::delivery &d, proton::message &msg) {
 		vehdata.gnTimestamp = decodedData.gnTimestamp;
 		vehdata.stationID = stationID; // It is very important to save also the stationID
 		vehdata.camTimestamp = static_cast<long>(decoded_cam->cam.generationDeltaTime);
+		vehdata.stationType = static_cast<ldmmap::e_StationTypeLDM>(decoded_cam->cam.camParameters.basicContainer.stationType);
 
 		// Save also the source vehicle quadkey
 		proton::scalar quadkey_prop = msg.properties().get("quadkeys");

@@ -47,8 +47,8 @@ class vehicleVisualizer
 		// These functions will update the position on the map of the object with unique id "objID" (the vehicle ID can be used here, for instance)
 		// If the object does not exist yet on the map, it will be first added
 		// If no "heading" is specified, VIS_HEADING_INVALID (i.e. no heading available) will be sent to the server
-		int sendObjectUpdate(std::string objID, double lat, double lon);
-		int sendObjectUpdate(std::string objID, double lat, double lon, double heading);
+		int sendObjectUpdate(std::string objID, double lat, double lon, int stationType);
+		int sendObjectUpdate(std::string objID, double lat, double lon, int stationType, double heading);
 
 		// This function will remove an object from the map, given its unique "objID"
 		int sendObjectClean(std::string objID);

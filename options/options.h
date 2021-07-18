@@ -30,7 +30,7 @@
 #include "options_strings.h"
 
 // Insert here the version string
-#define VERSION_STR "S-LDM 0.3.3-beta"
+#define VERSION_STR "S-LDM 0.3.4-beta"
 
 #define DEFAULT_BROKER_URL "127.0.0.1:5672"
 #define DEFAULT_BROKER_QUEUE "topic://5gcarmen.examples"
