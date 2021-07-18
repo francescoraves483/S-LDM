@@ -5,6 +5,7 @@
 #include <numeric>
 #include "QuadKeyTS.h"
 #include <fstream>
+#include <algorithm>
 
 namespace QuadKeys
 {
@@ -88,13 +89,13 @@ namespace QuadKeys
 			m_latlon_variation = 0.002;
 			break;
 		case 16:
-			m_latlon_variation = 0.004;
+			m_latlon_variation = 0.003;
 			break;
 		case 15:
-			m_latlon_variation = 0.008;
+			m_latlon_variation = 0.007;
 			break;
 		case 14:
-			m_latlon_variation = 0.016;
+			m_latlon_variation = 0.015;
 			break;
 		default: // We should never reach this point
 			m_latlon_variation = 10000;
@@ -229,6 +230,71 @@ namespace QuadKeys
 		//  fout.close();
 		
 		return v;
+	}
+	
+	std::vector<std::string> QuadKeyTS::unifyQuadkeys2(std::vector<std::string> quadKeys) {
+		std::vector<std::string> vf = {};
+		bool reduction_occurred = false;
+
+		// std::sort(std::begin(quadKeys), std::end(quadKeys));
+
+		// Sort the array (this function requires the vector to be sorted alphabetically)
+		std::sort(std::begin(quadKeys),std::end(quadKeys));
+
+		for(int v=0;v<m_levelOfDetail;v++) {
+			// std::sort(std::begin(quadKeys), 
+			// 	std::end(quadKeys), 
+			// 	[](const std::string& lhs, const std::string& rhs) {return std::make_tuple(lhs.size(), std::stol(lhs)) < std::make_tuple(rhs.size(), std::stol(rhs));});
+
+			// std::sort(std::begin(quadKeys),std::end(quadKeys));
+
+			// for(int bh=0;bh<quadKeys.size();bh++) {
+			// 	std::cout << quadKeys[bh] << std::endl;
+			// }
+
+			// std::cout << "v = " << v << " - m_levelOfDetail = " << m_levelOfDetail << " reduction_occurred = " << reduction_occurred << " quadKeys.size() = " << quadKeys.size() << std::endl;
+			
+			reduction_occurred = false;
+
+			for(int i=0;i<quadKeys.size();i++) {
+				std::string main_part = quadKeys.at(i).substr(0,quadKeys.at(i).length()-1);
+
+				if(i<=quadKeys.size()-4 && quadKeys.at(i).back()=='0' &&
+					main_part == quadKeys.at(i+1).substr(0,quadKeys.at(i+1).length()-1) && quadKeys.at(i+1).back()=='1' &&
+					main_part == quadKeys.at(i+2).substr(0,quadKeys.at(i+2).length()-1) && quadKeys.at(i+2).back()=='2' &&
+					main_part == quadKeys.at(i+3).substr(0,quadKeys.at(i+3).length()-1)&& quadKeys.at(i+3).back()=='3') {
+
+					// std::cout << "main_part: " << main_part << "| 1: " << quadKeys.at(i+1) << "| 2: " << quadKeys.at(i+2) << "| 3: " << quadKeys.at(i+3) << std::endl;
+					vf.push_back(main_part);
+					i+=3;
+
+					reduction_occurred = true;
+				} else {
+					vf.push_back(quadKeys.at(i));
+				}
+	 		}
+
+	 		// std::cout << "reduction_occurred = " << reduction_occurred << std::endl;
+
+	 		if(reduction_occurred == false) {
+	 			break;
+	 		}
+
+	 		quadKeys = std::move(vf);
+	 		// vf.clear();
+	 	}
+
+ 		// vf.erase(std::unique(vf.begin(),vf.end()),vf.end());
+
+	 	// Sort the final vector by the length of the strings (i.e., the length of the Quadkeys), to place first the shorter Quadkeys, corresponding
+	 	// to larger areas, in which it should be more probable to have a greater number of vehicles (i.e, more messages are probably coming from
+	 	// these areas)
+	 	// As the AMQP 1.0 filter is an OR between all the Quadkeys, having first the Quadkeys in which it is more probable to have a greater number 
+	 	// of vehicles may slightly improve the broker-side filtering performance (as the match may be found earlier if the broker is "scanning"
+	 	// all the "OR-ed" Quadkeys in the filter in a sequential way)
+ 		std::sort(std::begin(quadKeys),std::end(quadKeys),[](const std::string &lhs, const std::string &rhs) {return lhs.size() < rhs.size();});
+
+ 		return quadKeys;
 	}
 
 	void QuadKeyTS::unifyQuadkeys(std::vector<std::string> &quadKeys) {

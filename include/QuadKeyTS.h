@@ -26,7 +26,11 @@ namespace QuadKeys
         	// This method should be called on the output of LatLonToQuadKeyRange(), in order to consolidate together quadkeys, when possible,
         	// and reduce the size of the filter
         	// The input vector is passed by reference and it is thus modified by unifyQuadkeys()
+            // Warning: as of now, unifyQuadkeys may have some bugs which occurs for few particular input vectors
+            // Please use unifyQuadkeys2() for the time being
     		void unifyQuadkeys(std::vector<std::string> &quadKeys);
+            // This is a different implementation of the unifyQuadkeys() function
+            std::vector<std::string> unifyQuadkeys2(std::vector<std::string> quadKeys);
             void checkdim(std::vector<std::string> &quadKeys);
     };
 }

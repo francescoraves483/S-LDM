@@ -177,7 +177,8 @@ AMQPClient::on_container_start(proton::container &c) {
 		}
 
 		// Quadkeys unifier algorithm
-		tilesys.unifyQuadkeys(quadKeys);
+		// tilesys.unifyQuadkeys(quadKeys);
+		quadKeys=tilesys.unifyQuadkeys2(quadKeys);
 		tilesys.checkdim(quadKeys);
 
 		// Write the computed Quadkeys to the cache file
