@@ -13,6 +13,7 @@
 #include <proton/receiver_options.hpp>
 
 #include <memory>
+#include <atomic>
 
 #include "etsiDecoderFrontend.h"
 #include "areaFilter.h"
@@ -28,7 +29,6 @@ class AMQPClient : public proton::messaging_handler {
 		double max_longitude;
 		double min_latitude;
 		double min_longitude;
-		int levelOfdetail;
 
 		bool m_printMsg; // If 'true' each received message will be printed (default: 'false' - enable only for debugging purposes)
 
@@ -36,7 +36,7 @@ class AMQPClient : public proton::messaging_handler {
 		areaFilter m_areaFilter;
 		struct options *m_opts_ptr;
 		ldmmap::LDMMap *m_db_ptr;
-		indicatorTriggerManager m_indicatorTrgMan;
+		indicatorTriggerManager *m_indicatorTrgMan_ptr;
 		bool m_indicatorTrgMan_enabled;
 
 		std::string m_logfile_name;
@@ -47,9 +47,15 @@ class AMQPClient : public proton::messaging_handler {
 		bool m_reconnect;
 		bool m_allow_sasl;
 		bool m_allow_insecure;
+
+		std::string m_client_id;
+
+		std::string m_quadKey_filter="";
+
+		std::atomic<proton::container *> m_cont;
 	public:
-		AMQPClient(const std::string &u,const std::string &a,const double &latmin,const double &latmax,const double &lonmin, const double &lonmax, const int &lev, struct options *opts_ptr, ldmmap::LDMMap *db_ptr, std::string logfile_name) :
-		conn_url_(u), addr_(a), max_latitude(latmax), max_longitude(lonmax), min_latitude(latmin), min_longitude(lonmin), levelOfdetail(lev), m_opts_ptr(opts_ptr), m_db_ptr(db_ptr), m_indicatorTrgMan(db_ptr,opts_ptr), m_logfile_name(logfile_name) {
+		AMQPClient(const std::string &u,const std::string &a,const double &latmin,const double &latmax,const double &lonmin, const double &lonmax, struct options *opts_ptr, ldmmap::LDMMap *db_ptr, std::string logfile_name) :
+		conn_url_(u), addr_(a), max_latitude(latmax), max_longitude(lonmax), min_latitude(latmin), min_longitude(lonmin), m_opts_ptr(opts_ptr), m_db_ptr(db_ptr), m_logfile_name(logfile_name), m_quadKey_filter("") {
 			m_printMsg=false;
 			m_areaFilter.setOptions(m_opts_ptr);
 			m_indicatorTrgMan_enabled=false;
@@ -57,10 +63,12 @@ class AMQPClient : public proton::messaging_handler {
 			m_reconnect=false;
 			m_allow_sasl=false;
 			m_allow_insecure=false;
+			m_client_id="unset";
+			m_cont=nullptr;
 		}
 
-		AMQPClient(const std::string &u,const std::string &a,const double &latmin,const double &latmax,const double &lonmin, const double &lonmax, const int &lev, struct options *opts_ptr, ldmmap::LDMMap *db_ptr) :
-		conn_url_(u), addr_(a), max_latitude(latmax), max_longitude(lonmax), min_latitude(latmin), min_longitude(lonmin), levelOfdetail(lev), m_opts_ptr(opts_ptr), m_db_ptr(db_ptr), m_indicatorTrgMan(db_ptr,opts_ptr) {
+		AMQPClient(const std::string &u,const std::string &a,const double &latmin,const double &latmax,const double &lonmin, const double &lonmax, struct options *opts_ptr, ldmmap::LDMMap *db_ptr) :
+		conn_url_(u), addr_(a), max_latitude(latmax), max_longitude(lonmax), min_latitude(latmin), min_longitude(lonmin), m_opts_ptr(opts_ptr), m_db_ptr(db_ptr), m_quadKey_filter("") {
 			m_printMsg=false;
 			m_areaFilter.setOptions(m_opts_ptr);
 			m_indicatorTrgMan_enabled=false;
@@ -69,10 +77,13 @@ class AMQPClient : public proton::messaging_handler {
 			m_reconnect=false;
 			m_allow_sasl=false;
 			m_allow_insecure=false;
+			m_client_id="unset";
+			m_cont=nullptr;
 		}
 
-		void setIndicatorTriggerManager(bool enabled) {
-			m_indicatorTrgMan_enabled=enabled;
+		void setIndicatorTriggerManager(indicatorTriggerManager *indicatorTrgMan_ptr) {
+			m_indicatorTrgMan_ptr=indicatorTrgMan_ptr;
+			m_indicatorTrgMan_enabled=true;
 		}
 
 		void setUsername(std::string username) {
@@ -96,11 +107,29 @@ class AMQPClient : public proton::messaging_handler {
 			m_allow_insecure=allow_insecure;
 			m_reconnect=reconnect;
 		}
+
+		void setClientID(std::string id) {
+			m_client_id=id;
+		}
+
+		void setFilter(std::string &filter) {
+			m_quadKey_filter=filter;
+		}
 		
 		void on_container_start(proton::container &c) override;
 		void on_connection_open(proton::connection &conn) override;
 		void on_message(proton::delivery &d, proton::message &msg) override;
 		void on_container_stop(proton::container &c) override;
+		void on_connection_close(proton::connection &conn) override;
+
+		// This function can be used to force the termination of the event loop of the current client from outside the AMQPClient object
+		// "m_conn" is an atomic pointer to the proton::container which is set as soon as on_container_start() is called
+		void force_container_stop() {
+			if(m_cont!=nullptr) {
+				m_cont.load()->stop();
+				m_cont=nullptr;
+			}
+		}
 
 		void setPrintMsg(bool printMsgEnable) {m_printMsg = printMsgEnable;}
 };

@@ -102,7 +102,10 @@ web::json::value ManeuveringServiceRestClient::make_SLDM_json(int eventID) {
 	// Returned vehicle data vector
 	std::vector<ldmmap::LDMMap::returnedVehicleData_t> returnedvehs;
 
-	sldm_json["generation_tstamp"] = web::json::value::number(get_timestamp_us());
+	// "now" timestamp (i.e., the timestamp at which this POST request is being generated: "generation_tstamp")
+	uint64_t now_us = get_timestamp_us();
+
+	sldm_json["generation_tstamp"] = web::json::value::number(now_us);
 	sldm_json["eventID"] = MAKE_NUM(eventID);
 	sldm_json["event"] = MAKE_STR("CLC");
 	sldm_json["reference_vehicle_ID"] = MAKE_NUM(m_refVehStationID);
@@ -142,7 +145,8 @@ web::json::value ManeuveringServiceRestClient::make_SLDM_json(int eventID) {
 			vehdata.phData,
 			vehdata.vehData.sourceQuadkey,
 			refRelDist,
-			vehdata.vehData.stationType);
+			vehdata.vehData.stationType,
+			now_us-vehdata.vehData.timestamp_us);
 
 		idx++;
 	}
@@ -164,7 +168,8 @@ web::json::value ManeuveringServiceRestClient::make_vehicle(uint64_t stationID,
 	ldmmap::PHpoints *path_history,
 	std::string &src_quadk,
 	double relative_dist_m,
-	ldmmap::e_StationTypeLDM stationType
+	ldmmap::e_StationTypeLDM stationType,
+	uint64_t diff_ref_tstamp
 	) {
 
 	web::json::value vehicle;
@@ -179,6 +184,7 @@ web::json::value ManeuveringServiceRestClient::make_vehicle(uint64_t stationID,
 	vehicle["relative_dist_to_reference_m"] = MAKE_NUM(relative_dist_m);
 	vehicle["sourceQuadkey"] = MAKE_STR(src_quadk);
 	vehicle["stationType"] = MAKE_NUM(stationType);
+	vehicle["time_since_generation_tstamp"] = MAKE_NUM(diff_ref_tstamp);
 
 	if(car_length_mm.isAvailable()) {
 		vehicle["car_len_mm"] = MAKE_NUM(car_length_mm.getData());

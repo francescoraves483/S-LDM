@@ -3,12 +3,119 @@
 #include <sstream>
 #include <cmath>
 #include <numeric>
-#include "QuadKeyTS.h"
 #include <fstream>
 #include <algorithm>
+#include <limits>
+#include <iomanip>
+#include "QuadKeyTS.h"
+#include "utils.h"
 
 namespace QuadKeys
 {
+	std::string 
+	QuadKeyTS::getQuadKeyFilter(double min_latitude, double min_longitude, double max_latitude, double max_longitude,bool *cachefilefound) {
+		std::string line;
+		bool cache_file_found = false;
+		std::ifstream ifile("cachefile.sldmc");
+		std::vector<std::string> fromfile;
+		std::vector<std::string> quadKeys;
+		std::string filter_string="";
+		
+		// uint64_t bf = 0.0,af = 0.0;
+
+		// if(m_logfile_name!="") {
+		// 	bf=get_timestamp_ns();
+		// }
+
+		if(ifile.is_open()) {
+			std::cout<<"[QuadKeyTS - GetQuadKeyFilter] Cache file available: reading the parameters..."<< std::endl;
+
+			while(getline(ifile, line)) {
+				fromfile.push_back(line);
+			}
+
+			double minlatff = stod(fromfile.at(0));
+			double maxlatff = stod(fromfile.at(1));
+			double minlonff = stod(fromfile.at(2));
+			double maxlonff = stod(fromfile.at(3));
+
+			/*fprintf(stdout,"From File we get max_latitude: %.40lf\n",maxlatff);
+			fprintf(stdout,"Actual max_latitude parameter%.40lf\n",max_latitude);
+			fprintf(stdout,"From File we get min_latitude: %.40lf\n",minlatff);
+			fprintf(stdout,"Actual min_latitude parameter%.40lf\n",min_latitude);*/
+
+			if(doublecomp(minlatff, min_latitude) && doublecomp(maxlatff, max_latitude) && doublecomp(minlonff, min_longitude) && doublecomp(maxlonff, max_longitude) && fromfile.size() > 4){
+				cache_file_found = true;
+			}
+		} else {
+			std::cout<<"[QuadKeyTS - GetQuadKeyFilter] No cache file found!"<<std::endl;
+		}
+
+		ifile.close();
+
+		if(cache_file_found == false) {
+			std::ofstream ofile("cachefile.sldmc");
+
+			std::cout<<"[QuadKeyTS - GetQuadKeyFilter] New coordinates: recomputing quadkeys..."<<std::endl;
+			std::cout<<"[QuadKeyTS - GetQuadKeyFilter] Maximum level of details: "<<m_levelOfDetail<<std::endl;
+			std::cout<<"[QuadKeyTS - GetQuadKeyFilter] Lat/Lon range scanning accuracy: "<<m_latlon_variation<<std::endl;
+
+			// Here we get the vector containing all the quadkeys in the range at a given level of detail
+			quadKeys = LatLonToQuadKeyRange(min_latitude, max_latitude, min_longitude, max_longitude);
+
+			// Add the range information to the cache file
+			if(ofile.is_open()) {
+				ofile << std::fixed << std::setprecision(6) << min_latitude << "\n" << max_latitude << "\n" << min_longitude << "\n" << max_longitude << "\n";
+			}
+
+			// Quadkeys unifier algorithm
+			// unifyQuadkeys(quadKeys);
+			quadKeys=unifyQuadkeys2(quadKeys);
+			checkdim(quadKeys);
+
+			// Write the computed Quadkeys to the cache file
+			std::ofstream file;
+			if(ofile.is_open()) {
+				for(size_t i = 0; i < quadKeys.size(); i++){
+					ofile << quadKeys.at(i) << "\n";
+				}
+			}
+
+			ofile.close();
+
+			std::cout<<"[QuadKeyTS - GetQuadKeyFilter] Finished: Quadkey cache file created."<<std::endl;
+
+			// Here we create a string to pass to the filter (SQL like)
+			for(size_t i = 0; i < quadKeys.size(); i++) {
+				filter_string.insert(filter_string.length(), "quadkeys LIKE ''");
+				//l = s.length() - 1;
+				filter_string.insert(filter_string.length() - 1, quadKeys.at(i));
+				filter_string.insert(filter_string.length() - 1, "%");
+				if(i < quadKeys.size()-1){
+					filter_string.insert(filter_string.length(), " OR ");
+				}
+			}
+		} else {
+			std::cout<<"[QuadKeyTS - GetQuadKeyFilter] Filter setup from a cache file... "<<std::endl;
+
+			for(size_t i = 4; i < fromfile.size(); i++) {
+				filter_string.insert(filter_string.length(), "quadkeys LIKE ''");
+				//l = s.length() - 1;
+				filter_string.insert(filter_string.length() - 1, fromfile.at(i));
+				filter_string.insert(filter_string.length() - 1, "%");
+				if(i < fromfile.size()-1){
+					filter_string.insert(filter_string.length(), " OR ");
+				}
+			}
+		}
+
+		if(cachefilefound!=nullptr) {
+			*cachefilefound=cache_file_found;
+		}
+
+		return filter_string;
+	}
+
 	QuadKeyTS::QuadKeyTS() {
 		// Set the default level of detail and corresponding needed lat-lon variation
 		m_levelOfDetail = 16;

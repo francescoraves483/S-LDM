@@ -13,6 +13,7 @@ bool indicatorTriggerManager::checkAndTrigger(double lat, double lon, uint64_t r
 	// if(exteriorLightsStatus & (1 << 5) || exteriorLightsStatus & (1 << 4)) {
 	if(exteriorLightsStatus & (1 << 4)) {
 		// Avoid triggering multiple times for the same vehicle
+		m_already_triggered_mutex.lock();
 		if(std::find(m_already_triggered.begin(), m_already_triggered.end(), refVehStationID) == m_already_triggered.end()) {
 			// This constructor for the Maneuvering Service REST client is no more available as the database should be read
 			// with a given stationID as reference (i.e., generating the context around a moving vehicle), and not considering
@@ -28,11 +29,9 @@ bool indicatorTriggerManager::checkAndTrigger(double lat, double lon, uint64_t r
 
 			if(ms_restclient!=nullptr) {
 				ms_restclient->setNotifyFunction(std::bind(&indicatorTriggerManager::notifyOpTermination,this,std::placeholders::_1));
-
-				m_already_triggered_mutex.lock();
+				
 				m_already_triggered.push_back(refVehStationID);
-				m_already_triggered_mutex.unlock();
-
+				
 				ms_restclient->startRESTthread();
 				
 				retval = true;
@@ -41,6 +40,7 @@ bool indicatorTriggerManager::checkAndTrigger(double lat, double lon, uint64_t r
 				retval = false;
 			}
 		}
+		m_already_triggered_mutex.unlock();
 	}
 
 	return retval;

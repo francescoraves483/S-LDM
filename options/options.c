@@ -6,6 +6,14 @@
 #include <unistd.h>
 #include <errno.h>
 
+// Define the functions to fill in the additional AMQP clients (if any) options array
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wstrict-aliasing"
+#define CFG(name,type) AMQPCLIENT_FIELDS_ARRAY_FILL_DECLARE(name,type)
+	AMQPCLIENT_CONFIG_FIELDS
+#undef CFG
+#pragma GCC diagnostic pop
+
 // Names for the long options
 #define LONGOPT_h "help"
 #define LONGOPT_v "version"
@@ -22,21 +30,41 @@
 #define LONGOPT_w "vehviz-web-port"
 #define LONGOPT_L "log-file-name"
 #define LONGOPT_C "context-radius"
+#define LONGOPT_g "disable-age-check"
 
 // AMQP broker (main)
-#define LONGOPT_u "amqp-1-username"
-#define LONGOPT_p "amqp-1-password"
-#define LONGOPT_R "amqp-1-reconnect"
-#define LONGOPT_S "amqp-1-allow-sasl"
-#define LONGOPT_I "amqp-1-allow-plain"
-
+#define LONGOPT_u "amqp-main-username"
+#define LONGOPT_p "amqp-main-password"
+#define LONGOPT_R "amqp-main-reconnect"
+#define LONGOPT_S "amqp-main-allow-sasl"
+#define LONGOPT_I "amqp-main-allow-plain"
 
 // Long-only options
 #define LONGOPT_vehviz_update_interval_sec "vehviz-update-interval"
 #define LONGOPT_indicator_trgman_disable "indicator-trgman-disable"
-// The corresponding "val"s are used internally and they should be set as sequential integers starting from 256
+#define LONGOPT_disable_quadkey_filter "disable-quadkey-filter"
+// The corresponding "val"s are used internally and they should be set as sequential integers starting from 256 (the range 320-399 should not be used as it is reserved to the AMQP broker long options)
 #define LONGOPT_vehviz_update_interval_sec_val 256
 #define LONGOPT_indicator_trgman_disable_val 257
+#define LONGOPT_disable_quadkey_filter_val 258
+
+// AMQP broker (additional)
+#define LONGOPT_amqp_enable_additionals "amqp-enable-additionals"
+#define LONGOPT_amqp_additionals_url "amqp-additionals-url"
+#define LONGOPT_amqp_additionals_queue "amqp-additionals-queue"
+#define LONGOPT_amqp_additionals_username "amqp-additionals-username"
+#define LONGOPT_amqp_additionals_password "amqp-additionals-password"
+#define LONGOPT_amqp_additionals_reconnect "amqp-additionals-reconnect"
+#define LONGOPT_amqp_additionals_allow_sasl "amqp-additionals-allow-sasl"
+#define LONGOPT_amqp_additionals_allow_plain "amqp-additionals-allow-plain"
+#define LONGOPT_amqp_enable_additionals_val 320
+#define LONGOPT_amqp_additionals_url_val 321
+#define LONGOPT_amqp_additionals_queue_val 322
+#define LONGOPT_amqp_additionals_username_val 323
+#define LONGOPT_amqp_additionals_password_val 324
+#define LONGOPT_amqp_additionals_reconnect_val 325
+#define LONGOPT_amqp_additionals_allow_sasl_val 326
+#define LONGOPT_amqp_additionals_allow_plain_val 327
 
 
 #define LONGOPT_STR_CONSTRUCTOR(LONGOPT_STR) "  --"LONGOPT_STR"\n"
@@ -66,14 +94,26 @@ static const struct option long_opts[]={
 	{LONGOPT_S,				no_argument,		NULL, 'S'},
 	{LONGOPT_I,				no_argument,		NULL, 'I'},
 	{LONGOPT_C,				required_argument,	NULL, 'C'},
+	{LONGOPT_g,				no_argument,		NULL, 'g'},
 
 	{LONGOPT_vehviz_update_interval_sec,	required_argument,	NULL, LONGOPT_vehviz_update_interval_sec_val},
 	{LONGOPT_indicator_trgman_disable,		no_argument,		NULL, LONGOPT_indicator_trgman_disable_val},
+	{LONGOPT_disable_quadkey_filter,		no_argument,		NULL, LONGOPT_disable_quadkey_filter_val},
+
+	// Additional AMQP clients options
+	{LONGOPT_amqp_enable_additionals,		required_argument,		NULL, LONGOPT_amqp_enable_additionals_val},
+	{LONGOPT_amqp_additionals_url,			required_argument,		NULL, LONGOPT_amqp_additionals_url_val},
+	{LONGOPT_amqp_additionals_queue,		required_argument,		NULL, LONGOPT_amqp_additionals_queue_val},
+	{LONGOPT_amqp_additionals_username,		required_argument,		NULL, LONGOPT_amqp_additionals_username_val},
+	{LONGOPT_amqp_additionals_password,		required_argument,		NULL, LONGOPT_amqp_additionals_password_val},
+	{LONGOPT_amqp_additionals_reconnect,	required_argument,		NULL, LONGOPT_amqp_additionals_reconnect_val},
+	{LONGOPT_amqp_additionals_allow_sasl,	required_argument,		NULL, LONGOPT_amqp_additionals_allow_sasl_val},
+	{LONGOPT_amqp_additionals_allow_plain,	required_argument,		NULL, LONGOPT_amqp_additionals_allow_plain_val},
 
 	{NULL, 0, NULL, 0}
 };
 
-// Option strings: defined here the description for each option to be then included inside print_long_info()
+// Option strings: define here the description for each option to be then included inside print_long_info()
 #define OPT_A_description \
 	LONGOPT_STR_CONSTRUCTOR(LONGOPT_A) \
 	"  -A <area coordinates>: set the internal area covered by the S-LDM. The string specified\n" \
@@ -151,6 +191,14 @@ static const struct option long_opts[]={
 	"\t  This option currently affects only the data transmission to the Maneuvering Service.\n" \
 	"\t  Default: (150).\n"
 
+#define OPT_g_description \
+	LONGOPT_STR_CONSTRUCTOR(LONGOPT_g) \
+	"  -g: disable data age check when updating the database. When this option is active, the latest.\n" \
+	"\t  received data is always saved to the database, for each object, no matter if the timestamps\n" \
+	"\t  are older than the one of the data already stored.\n" \
+	"\t  When this option is not specified, GeoNetworking timestamps are used to understand if the\n" \
+	"\t  received data is up-to-date and should be saved to the database or not.\n"
+
 #define OPT_vehviz_update_interval_sec_description \
 	"  --"LONGOPT_vehviz_update_interval_sec" <interval in seconds>: advanced option: this option can be used to\n" \
 	"\t  modify the update rate of the web-based GUI. \n" \
@@ -160,6 +208,35 @@ static const struct option long_opts[]={
 #define OPT_indicator_trgman_disable_description \
 	"  --"LONGOPT_indicator_trgman_disable": advanced option: disable the indicator trigger manager and\n" \
 	"\t  the transmission of data to the Maneuvering Service via the REST API.\n"
+
+#define OPT_disable_quadkey_filter_description \
+	"  --"LONGOPT_disable_quadkey_filter": disable the QuadKey filter to avoid pre-filtering of messages at the AMQP broker\n" \
+	"\t  level. When this option is specified, all the messages will be received and possibly discarded at the Area Filter\n" \
+	"\t  module, no matter the position of the transmitting vehicle. Typically, this option should not be specified, unless\n" \
+	"\t  for some reason the vehicles are not inserting the \"quadkeys\" property inside their AMQP messages. If this is the\n" \
+	"\t  case, you can use this option to enable the reception of all the messages without the aforementioned property.\n" \
+	"\t  However, using this option may affect the overall performance of the S-LDM.\n"
+
+#define OPT_brokers_enable_description \
+	"  --"LONGOPT_amqp_enable_additionals" <number of additional clients>: this option can be used to enable the subscription to additional brokers,\n" \
+	"\t  other than the main one. Up to 9 additional AMQP clients can be used, for the time being.\n" \
+	"\t  The additional clients can then be configured with:\n" \
+	"\t  "LONGOPT_STR_CONSTRUCTOR(LONGOPT_amqp_additionals_url) "" \
+	"\t  "LONGOPT_STR_CONSTRUCTOR(LONGOPT_amqp_additionals_queue) "" \
+	"\t  "LONGOPT_STR_CONSTRUCTOR(LONGOPT_amqp_additionals_username) "" \
+	"\t  "LONGOPT_STR_CONSTRUCTOR(LONGOPT_amqp_additionals_password) "" \
+	"\t  "LONGOPT_STR_CONSTRUCTOR(LONGOPT_amqp_additionals_reconnect) "" \
+	"\t  "LONGOPT_STR_CONSTRUCTOR(LONGOPT_amqp_additionals_allow_sasl) "" \
+	"\t  "LONGOPT_STR_CONSTRUCTOR(LONGOPT_amqp_additionals_allow_plain) "" \
+	"\t  All these options work just like the corresponding ones for the main AMQP client, but they all accept a comma-separated\n" \
+	"\t  list, where each entry corresponds, respectively, to the first client, then to the second, then to the third, and\n" \
+	"\t  so on. The number of elements in each list should be equal to <number of additional clients>.\n" \
+	"\t  The last three options are optional and, if not specified, the corresponding default values (all set to 'false'/\n" \
+	"\t  'disabled') are set for all the additional clients. The username and password options, instead, if not specified,\n" \
+	"\t  will not set the credentials for all the additional clients. Instead, if some clients need the credentials and some other\n" \
+	"\t  don't, you should specify a list with some empty entries (as a single empty space), such as: \"myuser1, , ,myuser2\".\n" \
+	"\t  Example with just one additional AMQP client:\n" \
+	"\t  --amqp-enable-additionals 1 --amqp-additionals-url 127.0.0.1:5673 --amqp-additionals-queue topic://yourtopic.name\n"
 
 static void print_long_info(char *argv0) {
 	fprintf(stdout,"\nUsage: %s [-A S-LDM coverage internal area] [options]\n"
@@ -180,8 +257,11 @@ static void print_long_info(char *argv0) {
 		OPT_w_description
 		OPT_L_description
 		OPT_C_description
+		OPT_g_description
 		OPT_vehviz_update_interval_sec_description
 		OPT_indicator_trgman_disable_description
+		OPT_disable_quadkey_filter_description
+		OPT_brokers_enable_description
 		,
 		argv0,argv0,argv0);
 
@@ -236,6 +316,16 @@ void options_initialize(struct options *options) {
 
 	broker_options_inizialize(&options->amqp_broker_one);
 
+	// Additional AMQP clients options (num_amqp_x_enabled should always start from '0' here, i.e., no additional AMQP clients are used by default)
+	// ----------------------------------
+	options->amqp_broker_x=NULL;
+	// for(int i=0;i<MAX_AMQP_CLIENTS-1;i++) {
+	// 	// options->amqp_broker_x_enabled[i]=false;
+	// 	broker_options_inizialize(&options->amqp_broker_x[i]);
+	// }
+	options->num_amqp_x_enabled=0;
+	// ----------------------------------
+
 	// options->broker_url=options_string_declare();
 	// options->broker_topic=options_string_declare();
 
@@ -253,6 +343,9 @@ void options_initialize(struct options *options) {
 	options->vehviz_update_interval_sec=DEFAULT_VEHVIZ_UPDATE_INTERVAL_SECONDS;
 
 	options->indicatorTrgMan_enabled=true;
+
+	options->ageCheck_enabled=true;
+	options->quadkFilter_enabled=true;
 }
 
 unsigned int parse_options(int argc, char **argv, struct options *options) {
@@ -432,6 +525,15 @@ unsigned int parse_options(int argc, char **argv, struct options *options) {
 				}
 				break;
 
+			case 'g':
+				if(options->ageCheck_enabled==false) {
+					fprintf(stderr,"Error. The age check (-g/--"LONGOPT_g") has already been disabled once.\n");
+					print_short_info_err(options,argv[0]);
+				}
+
+				options->ageCheck_enabled=false;
+				break;
+
 			case LONGOPT_vehviz_update_interval_sec_val:
 				errno=0; // Setting errno to 0 as suggested in the strtod() man page
 				options->vehviz_update_interval_sec=strtod(optarg,&sPtr);
@@ -448,6 +550,127 @@ unsigned int parse_options(int argc, char **argv, struct options *options) {
 			case LONGOPT_indicator_trgman_disable_val:
 				options->indicatorTrgMan_enabled=false;
 				break;
+
+			case LONGOPT_disable_quadkey_filter_val:
+				options->quadkFilter_enabled=false;
+				break;
+
+			// Additional AMQP clients options
+			// ----------------------------------
+			case LONGOPT_amqp_enable_additionals_val:
+				errno=0; // Setting errno to 0 as suggested in the strtol() man page
+				options->num_amqp_x_enabled=strtol(optarg,&sPtr,10);
+
+				if(sPtr==optarg) {
+					fprintf(stderr,"Cannot find any digit in the specified value (--" LONGOPT_amqp_enable_additionals ").\n");
+					options->num_amqp_x_enabled=0;
+					print_short_info_err(options,argv[0]);
+				} else if(errno || options->num_amqp_x_enabled<1 || options->num_amqp_x_enabled>MAX_ADDITIONAL_AMQP_CLIENTS-1) {
+					fprintf(stderr,"Error in parsing the number of additional AMQP clients. Remember that this number must be within [1,9].\n");
+					options->num_amqp_x_enabled=0;
+					print_short_info_err(options,argv[0]);
+				}
+
+				// Allocate the memory for the additional AMQP clients options (as we know, now, how many clients have been requested by the user)
+				options->amqp_broker_x=(broker_options_t *)malloc(options->num_amqp_x_enabled*sizeof(broker_options_t));
+				if(options->amqp_broker_x==NULL) {
+					fprintf(stderr,"Memory allocation error. Cannot allocate memory to store the additional AMQP clients options. Please free some memory and try again.\n");
+					options->num_amqp_x_enabled=0;
+					print_short_info_err(options,argv[0]);
+				}
+
+				for(int i=0;i<options->num_amqp_x_enabled;i++) {
+					broker_options_inizialize(&options->amqp_broker_x[i]);
+				}
+
+				break;
+
+			case LONGOPT_amqp_additionals_url_val:
+				if(options->num_amqp_x_enabled<=0) {
+					fprintf(stderr,"Error: attempting to configure additional AMQP clients before enabling them.\nYou must specify --" LONGOPT_amqp_enable_additionals " before attempting to configure any other additional AMQP client option.\n");
+					print_short_info_err(options,argv[0]);
+				}
+
+				if(fill_AMQPClient_options_array_broker_url(optarg,options->num_amqp_x_enabled,options->amqp_broker_x)!=true) {
+					fprintf(stderr,"Error in parsing the additional AMQP broker(s) URL. Please check if enough arguments are specified in the comma-separated list.\n");
+					print_short_info_err(options,argv[0]);
+				}
+				break;
+
+			case LONGOPT_amqp_additionals_queue_val:
+				if(options->num_amqp_x_enabled<=0) {
+					fprintf(stderr,"Error: attempting to configure additional AMQP clients before enabling them.\nYou must specify --" LONGOPT_amqp_enable_additionals " before attempting to configure any other additional AMQP client option.\n");
+					print_short_info_err(options,argv[0]);
+				}
+
+				if(fill_AMQPClient_options_array_broker_topic(optarg,options->num_amqp_x_enabled,options->amqp_broker_x)!=true) {
+					fprintf(stderr,"Error in parsing the additional AMQP broker(s) queue/topic. Please check if enough arguments are specified in the comma-separated list.\n");
+					print_short_info_err(options,argv[0]);
+				}
+				break;
+
+			case LONGOPT_amqp_additionals_username_val:
+				if(options->num_amqp_x_enabled<=0) {
+					fprintf(stderr,"Error: attempting to configure additional AMQP clients before enabling them.\nYou must specify --" LONGOPT_amqp_enable_additionals " before attempting to configure any other additional AMQP client option.\n");
+					print_short_info_err(options,argv[0]);
+				}
+
+				if(fill_AMQPClient_options_array_amqp_username(optarg,options->num_amqp_x_enabled,options->amqp_broker_x)!=true) {
+					fprintf(stderr,"Error in parsing the additional AMQP broker(s) username. Please check if enough arguments are specified in the comma-separated list.\n");
+					print_short_info_err(options,argv[0]);
+				}
+				break;
+
+			case LONGOPT_amqp_additionals_password_val:
+				if(options->num_amqp_x_enabled<=0) {
+					fprintf(stderr,"Error: attempting to configure additional AMQP clients before enabling them.\nYou must specify --" LONGOPT_amqp_enable_additionals " before attempting to configure any other additional AMQP client option.\n");
+					print_short_info_err(options,argv[0]);
+				}
+
+				if(fill_AMQPClient_options_array_amqp_password(optarg,options->num_amqp_x_enabled,options->amqp_broker_x)!=true) {
+					fprintf(stderr,"Error in parsing the additional AMQP broker(s) password. Please check if enough arguments are specified in the comma-separated list.\n");
+					print_short_info_err(options,argv[0]);
+				}
+				break;
+
+			case LONGOPT_amqp_additionals_reconnect_val:
+				if(options->num_amqp_x_enabled<=0) {
+					fprintf(stderr,"Error: attempting to configure additional AMQP clients before enabling them.\nYou must specify --" LONGOPT_amqp_enable_additionals " before attempting to configure any other additional AMQP client option.\n");
+					print_short_info_err(options,argv[0]);
+				}
+
+				if(fill_AMQPClient_options_array_amqp_reconnect(optarg,options->num_amqp_x_enabled,options->amqp_broker_x)!=true) {
+					fprintf(stderr,"Error in parsing the additional AMQP broker(s) reconnect options. Please check if enough arguments are specified in the comma-separated list.\n");
+					print_short_info_err(options,argv[0]);
+				}
+				break;
+
+			case LONGOPT_amqp_additionals_allow_sasl_val:
+				if(options->num_amqp_x_enabled<=0) {
+					fprintf(stderr,"Error: attempting to configure additional AMQP clients before enabling them.\nYou must specify --" LONGOPT_amqp_enable_additionals " before attempting to configure any other additional AMQP client option.\n");
+					print_short_info_err(options,argv[0]);
+				}
+
+				if(fill_AMQPClient_options_array_amqp_allow_sasl(optarg,options->num_amqp_x_enabled,options->amqp_broker_x)!=true) {
+					fprintf(stderr,"Error in parsing the additional AMQP broker(s) allow SASL options. Please check if enough arguments are specified in the comma-separated list.\n");
+					print_short_info_err(options,argv[0]);
+				}
+
+				break;
+
+			case LONGOPT_amqp_additionals_allow_plain_val:
+				if(options->num_amqp_x_enabled<=0) {
+					fprintf(stderr,"Error: attempting to configure additional AMQP clients before enabling them.\nYou must specify --" LONGOPT_amqp_enable_additionals " before attempting to configure any other additional AMQP client option.\n");
+					print_short_info_err(options,argv[0]);
+				}
+
+				if(fill_AMQPClient_options_array_amqp_allow_insecure(optarg,options->num_amqp_x_enabled,options->amqp_broker_x)!=true) {
+					fprintf(stderr,"Error in parsing the additional AMQP broker(s) allow PLAIN options. Please check if enough arguments are specified in the comma-separated list.\n");
+					print_short_info_err(options,argv[0]);
+				}
+
+				break;
+			// ----------------------------------
 
 			case 'v':
 				version_flg = true;
@@ -469,6 +692,34 @@ unsigned int parse_options(int argc, char **argv, struct options *options) {
 		fprintf(stdout,"Version: %s\n",VERSION_STR);
 		exit(EXIT_SUCCESS);
 	}
+
+	// Additional AMQP clients options check
+	// ----------------------------------
+	for(int i=0;i<options->num_amqp_x_enabled;i++) {
+		if(options_string_len(options->amqp_broker_x[i].broker_url)<=0) {
+			fprintf(stderr,"Error! No broker url/address specified for additional AMQP client %d.\nWhen using additional AMQP clients it is mandatory to specify a broker URL and queue/topic.\n",i+2);
+			exit(EXIT_FAILURE);
+		}
+
+		if(options_string_len(options->amqp_broker_x[i].broker_topic)<=0) {
+			fprintf(stderr,"Error! No broker queue/topic specified for additional AMQP client %d.\nWhen using additional AMQP clients it is mandatory to specify a broker URL and queue/topic.\n",i+2);
+			exit(EXIT_FAILURE);
+		}
+
+		// Print some additional information
+		if(options_string_len(options->amqp_broker_x[i].amqp_username)>1) {
+			fprintf(stdout,"AMQP client %d has a username set.\n",i+2);
+		} else {
+			fprintf(stdout,"No username set for AMQP client %d.\n",i+2);
+		}
+
+		if(options_string_len(options->amqp_broker_x[i].amqp_password)>1) {
+			fprintf(stdout,"AMQP client %d has a password set.\n",i+2);
+		} else {
+			fprintf(stdout,"No password set for AMQP client %d.\n",i+2);
+		}
+	}
+	// ----------------------------------
 
 	// Set the default values for the "options_string" options, if they have not been set before
 	// An unset "options_string" has a length which is <= 0
@@ -539,6 +790,18 @@ void options_free(struct options *options) {
 	// data structures
 	if(options!=NULL) {
 		broker_options_free(&options->amqp_broker_one);
+
+		// Additional AMQP clients options
+		// ----------------------------------
+		for(int i=0;i<options->num_amqp_x_enabled;i++) {
+			broker_options_free(&options->amqp_broker_x[i]);
+		}
+
+		if(options->amqp_broker_x!=NULL) {
+			free(options->amqp_broker_x);
+		}
+		// ----------------------------------
+
 		options_string_free(options->ms_rest_addr);
 		options_string_free(options->vehviz_nodejs_addr);
 	}

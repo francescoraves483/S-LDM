@@ -58,7 +58,8 @@ class ManeuveringServiceRestClient {
 			ldmmap::PHpoints *path_history,
 			std::string &src_quadk,
 			double relative_dist_m,
-			ldmmap::e_StationTypeLDM stationType
+			ldmmap::e_StationTypeLDM stationType,
+			uint64_t diff_ref_tstamp
 			);
 
 		const double m_range_m_default = 100.0;

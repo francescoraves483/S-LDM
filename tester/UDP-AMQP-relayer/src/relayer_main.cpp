@@ -68,6 +68,7 @@ void *CAMrelayer_callback(void *arg) {
 int main(int argc, char *argv[]) {
 	// Create thread structure to pass the needed arguments to the thread callback
 	pthread_camrelayer_args_t cam_args;
+	int comm_port = 20000;
 
 	// Parse the command line options with the TCLAP library
 	try {
@@ -80,16 +81,19 @@ int main(int argc, char *argv[]) {
 		TCLAP::ValueArg<std::string> queueArg("Q","queue","Broker queue or topic",false,"topic://5gcarmen.examples","string");
 		cmd.add(queueArg);
 
+		TCLAP::ValueArg<int> portArg("P","comm-port","Port for the UDP communication with ms-van3t",false,20000,"int");
+		cmd.add(portArg);
+
 		cmd.parse(argc,argv);
 
 		cam_args.m_broker_address=urlArg.getValue();
 		cam_args.m_queue_name=queueArg.getValue();
+		comm_port=portArg.getValue();
 
 		std::cout << "The relayer will connect to " + cam_args.m_broker_address + "/" + cam_args.m_queue_name << std::endl;
 	} catch (TCLAP::ArgException &tclape) { 
 		std::cerr << "TCLAP error: " << tclape.error() << " for argument " << tclape.argId() << std::endl;
 	}
-
 
 	// CAM relayer object
 	CAMrelayerAMQP CAM_relayer_obj;
@@ -132,7 +136,7 @@ int main(int argc, char *argv[]) {
 		std::cerr << "Error: cannot set an IP address to bind to." << std::endl;
 		exit(EXIT_FAILURE);
 	}
-	address.sin_port = htons(20000);
+	address.sin_port = htons(comm_port);
 	socklen_t addrlen = sizeof(struct sockaddr_in);
 
 	uint8_t buffer[1024];

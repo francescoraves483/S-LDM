@@ -32,6 +32,8 @@ namespace QuadKeys
             // This is a different implementation of the unifyQuadkeys() function
             std::vector<std::string> unifyQuadkeys2(std::vector<std::string> quadKeys);
             void checkdim(std::vector<std::string> &quadKeys);
+
+            std::string getQuadKeyFilter(double min_latitude, double min_longitude, double max_latitude, double max_longitude, bool *cachefilefound = nullptr);
     };
 }
 

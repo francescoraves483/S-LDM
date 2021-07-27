@@ -1,6 +1,7 @@
 #include "utils.h"
 #include <unistd.h>
 #include <cmath>
+#include <cstdarg>
 
 // Epoch time at 2004-01-01 (in ms)
 #define TIME_SHIFT_MILLI 1072915200000
@@ -122,4 +123,18 @@ std::string exteriorLights_bit_to_string(uint8_t extLights) {
 
 bool doublecomp(double d1, double d2, double eps) {
 	return std::abs(d1-d2) < eps;
+}
+
+int logfprintf(FILE *stream,std::string modulename,const char *format,...) {
+	va_list arg;
+	int retval;
+
+	std::time_t now = std::time(nullptr);
+
+	va_start(arg,format);
+	fprintf(stream,"[LOG - %s] (%.24s) ",modulename.c_str(),std::ctime(&now));
+	retval=vfprintf(stream,format,arg);
+	va_end(arg);
+
+	return retval;
 }

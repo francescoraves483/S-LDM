@@ -2,6 +2,7 @@
 #include <iostream>
 #include <unistd.h>
 #include <condition_variable>
+#include <thread>
 
 #include "LDMmap.h"
 #include "vehicle-visualizer.h"
@@ -18,7 +19,7 @@ extern "C" {
 #include "etsiDecoderFrontend.h"
 
 #define DB_CLEANER_INTERVAL_SECONDS 5
-#define DB_DELETE_OLDER_THAN_SECONDS 7
+#define DB_DELETE_OLDER_THAN_SECONDS 7 // This value should NEVER be set greater than (5-DB_CLEANER_INTERVAL_SECONDS/60) minutes or (300-DB_CLEANER_INTERVAL_SECONDS) seconds - doing so may break the database age check functionality!
 
 // Global atomic flag to terminate all the threads in case of errors
 std::atomic<bool> terminatorFlag;
@@ -28,6 +29,65 @@ vehicleVisualizer* globVehVizPtr=nullptr;
 // Global mutex (plus condition variable) to synchronize the threads using the object pointer defined above
 std::mutex syncmtx;
 std::condition_variable synccv;
+
+// Global structure (plus related mutex) to store references to AMQPClient objects to terminate their connections in case of errors
+std::unordered_map<int,AMQPClient*> amqpclimap;
+std::mutex amqpclimutex;
+
+void AMQPclient_t(ldmmap::LDMMap *db_ptr,options_t *opts_ptr,std::string logfile_name,std::string clientID,unsigned int clientIndex,indicatorTriggerManager *itm_ptr,std::string quadKey_filter,AMQPClient *main_amqp_ptr) {
+	if(clientIndex >= MAX_ADDITIONAL_AMQP_CLIENTS-1) {
+		fprintf(stderr,"[FATAL ERROR] Error: there is a bug in the code, which attemps to spawn too many AMQP clients.\nPlease report this bug to the developers.\n");
+		fprintf(stderr,"Bug details: client id: %s - client index: %u - max supported clients: %u\n",clientID.c_str(),clientIndex,MAX_ADDITIONAL_AMQP_CLIENTS-1);
+		terminatorFlag = true;
+		return;
+	}
+
+	try {
+		AMQPClient recvClient(std::string(options_string_pop(opts_ptr->amqp_broker_x[clientIndex].broker_url)), std::string(options_string_pop(opts_ptr->amqp_broker_x[clientIndex].broker_topic)), opts_ptr->min_lat,opts_ptr->max_lat, opts_ptr->min_lon, opts_ptr->max_lon, opts_ptr, db_ptr, logfile_name);
+		
+		// The indicator trigger manager is disabled by default in AMQPClient, unless it is explicitely enabled with a call to setIndicatorTriggerManager(true)
+		if(opts_ptr->indicatorTrgMan_enabled==true) {
+			recvClient.setIndicatorTriggerManager(itm_ptr);
+		}
+
+		// Set username, if specified
+		if(options_string_len(opts_ptr->amqp_broker_x[clientIndex].amqp_username)>0) {
+			recvClient.setUsername(std::string(options_string_pop(opts_ptr->amqp_broker_x[clientIndex].amqp_username)));
+		}
+
+		// Set password, if specified
+		if(options_string_len(opts_ptr->amqp_broker_x[clientIndex].amqp_password)>0) {
+			recvClient.setPassword(std::string(options_string_pop(opts_ptr->amqp_broker_x[clientIndex].amqp_password)));
+		}
+
+		// Set connection options (they all default to "false" - see also options.c/broker_options_inizialize())
+		recvClient.setConnectionOptions(opts_ptr->amqp_broker_x[clientIndex].amqp_allow_sasl,opts_ptr->amqp_broker_x[clientIndex].amqp_allow_insecure,opts_ptr->amqp_broker_x[clientIndex].amqp_reconnect);
+		
+		recvClient.setClientID(clientID);
+
+		// Set the QuadKey filter
+		if(opts_ptr->quadkFilter_enabled==true) {
+			recvClient.setFilter(quadKey_filter);
+		}
+
+		amqpclimutex.lock();
+		amqpclimap[clientIndex]=&recvClient;
+		amqpclimutex.unlock();
+
+		proton::container(recvClient).run();
+	} catch (const std::exception& e) {
+		amqpclimutex.lock();
+		amqpclimap.erase(clientIndex);
+		amqpclimutex.unlock();
+
+		std::cerr << "[AMQPClient "<< clientID << "] Exception occurred: " << e.what() << std::endl;
+		terminatorFlag = true;
+
+		main_amqp_ptr->force_container_stop();
+	}
+
+	return;
+}
 
 typedef struct vizOptions {
 	ldmmap::LDMMap *db_ptr;
@@ -180,12 +240,14 @@ int main(int argc, char **argv) {
 		std::cout << "Cross-border trigger mode enabled." << std::endl;
 	}
 
-	/* ----------------- TEST AREA (insert here your test code, which will be removed from the final version of main() ----------------- */
+	/* ----------------- TEST AREA (insert here your test code, which will be removed from the final version of main()) ----------------- */
 	/* ------------------------------------------------------------------------------------------------------------------------------------ */
 	/* ------------------------------------------------------------------------------------------------------------------------------------ */
 	/* ------------------------------------------------------------------------------------------------------------------------------------ */
 	/* ------------------------------------------------------------------------------------------------------------------------------------ */
 	/* ------------------------------------------------------------------------------------------------------------------------------------ */
+
+	std::cout << "*-*-*-*-*-* [INFO] S-LDM startup auto-tests started... *-*-*-*-*-*" << std::endl;
 
 	// Create a new veheicle visualizer object
 	//vehicleVisualizer vehicleVisObj;
@@ -322,6 +384,8 @@ int main(int argc, char **argv) {
 
 	dbtest.clear();
 
+	std::cout << "*-*-*-*-*-* [INFO] S-LDM startup auto-tests terminated. The S-LDM will start now. *-*-*-*-*-*" << std::endl;
+
 	/* ------------------------------------------------------------------------------------------------------------------------------------ */
 	/* ------------------------------------------------------------------------------------------------------------------------------------ */
 	/* ------------------------------------------------------------------------------------------------------------------------------------ */
@@ -356,31 +420,92 @@ int main(int argc, char **argv) {
 		logfile_name=std::string(options_string_pop(sldm_opts.logfile_name));
 	}
 
-	// Start the AMQP client event loop (for the time being, on loopback, but some options will be added in the future)
+	// Create an indicatorTriggerManager object (the same object will be then accessed by all the AMQP clients, when using more than one client)
+	indicatorTriggerManager itm(db_ptr,&sldm_opts);
+
+	// Set up the AMQP QuadKey filter for the AMQP client(s) (if more clients are spawned, the filter should be the same for all of them)
+	// -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
+	QuadKeys::QuadKeyTS tilesys;
+	std::string filter_str;
+	bool cache_file_found=false;
+	tilesys.setLevelOfDetail(16);
+
+	FILE *logfile_file = nullptr;
+	uint64_t bf = 0.0,af = 0.0;
+
+	// This is just to log the time needed to compute the full QuadKey filter, if requested by the user
+	if(logfile_name!="") {
+		if(logfile_name=="stdout") {
+			logfile_file=stdout;
+		} else {
+			// Opening the output file in write + append mode just to be safe in case the user does not change the file name
+			// between different executions of the S-LDM
+			logfile_file=fopen(logfile_name.c_str(),"wa");
+		}
+
+		bf=get_timestamp_ns();
+	}
+
+	filter_str=tilesys.getQuadKeyFilter(sldm_opts.min_lat-sldm_opts.ext_lat_factor,sldm_opts.min_lon-sldm_opts.ext_lon_factor,sldm_opts.max_lat+sldm_opts.ext_lat_factor,sldm_opts.max_lon+sldm_opts.ext_lon_factor,&cache_file_found);
+
+	// This is just to log the time needed to compute the full QuadKey filter, if requested by the user
+	if(logfile_name!="") {
+		af=get_timestamp_ns();
+
+		fprintf(logfile_file,"[LOG - QUADKEY FILTER COMPUTATION] Area (internal)=%.7lf:%.7lf-%.7lf:%7lf Area (full)=%.7lf:%.7lf-%.7lf:%7lf QKCacheFileFound=%d ProcTimeMilliseconds=%.6lf\n",
+			sldm_opts.min_lat,sldm_opts.min_lon,sldm_opts.max_lat,sldm_opts.max_lon,
+			sldm_opts.min_lat-sldm_opts.ext_lat_factor,sldm_opts.min_lon-sldm_opts.ext_lon_factor,sldm_opts.max_lat+sldm_opts.ext_lat_factor,sldm_opts.max_lon+sldm_opts.ext_lon_factor,
+			cache_file_found,(af-bf)/1000000.0);
+
+		if(logfile_name!="stdout" && logfile_file!=nullptr) {
+			fclose(logfile_file);
+		}
+	}
+	// -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
+
+	// Create the main AMQP client object
+	AMQPClient mainRecvClient(std::string(options_string_pop(sldm_opts.amqp_broker_one.broker_url)), std::string(options_string_pop(sldm_opts.amqp_broker_one.broker_topic)), sldm_opts.min_lat, sldm_opts.max_lat, sldm_opts.min_lon, sldm_opts.max_lon, &sldm_opts, db_ptr, logfile_name);
+
+	// Start the AMQP client event loop (additional clients, if requested by the user)
+	std::vector<std::thread> amqp_x_threads;
+
+	if(sldm_opts.num_amqp_x_enabled>0) {
+		std::cout << "[INFO] Additional AMQP clients will be used by the current instance of the S-LDM. Total number of AMQP clients (including the main one): " << sldm_opts.num_amqp_x_enabled+1 << std::endl;
+
+		for(unsigned int i=0;i<sldm_opts.num_amqp_x_enabled;i++) {
+			amqp_x_threads.emplace_back(AMQPclient_t,db_ptr,&sldm_opts,(logfile_name == "stdout" ? "stdout" : logfile_name + std::to_string(i+2)),
+				std::to_string(i+2),i,&itm,filter_str,&mainRecvClient);
+		}
+	}
+
+	// Start the AMQP client event loop (main client)
 	try {
-		AMQPClient recvClient(std::string(options_string_pop(sldm_opts.amqp_broker_one.broker_url)), std::string(options_string_pop(sldm_opts.amqp_broker_one.broker_topic)), sldm_opts.min_lat, sldm_opts.max_lat, sldm_opts.min_lon, sldm_opts.max_lon, 16, &sldm_opts, db_ptr, logfile_name);
-		
 		// The indicator trigger manager is disabled by default in AMQPClient, unless it is explicitely enabled with a call to setIndicatorTriggerManager(true)
 		if(sldm_opts.indicatorTrgMan_enabled==true) {
-			recvClient.setIndicatorTriggerManager(true);
+			mainRecvClient.setIndicatorTriggerManager(&itm);
 		}
 
 		// Set username, if specified
 		if(options_string_len(sldm_opts.amqp_broker_one.amqp_username)>0) {
-			recvClient.setUsername(std::string(options_string_pop(sldm_opts.amqp_broker_one.amqp_username)));
+			mainRecvClient.setUsername(std::string(options_string_pop(sldm_opts.amqp_broker_one.amqp_username)));
 		}
 
 		// Set password, if specified
 		if(options_string_len(sldm_opts.amqp_broker_one.amqp_password)>0) {
-			recvClient.setPassword(std::string(options_string_pop(sldm_opts.amqp_broker_one.amqp_password)));
+			mainRecvClient.setPassword(std::string(options_string_pop(sldm_opts.amqp_broker_one.amqp_password)));
 		}
 
 		// Set connection options (they all default to "false" - see also options.c/broker_options_inizialize())
-		recvClient.setConnectionOptions(sldm_opts.amqp_broker_one.amqp_allow_sasl,sldm_opts.amqp_broker_one.amqp_allow_insecure,sldm_opts.amqp_broker_one.amqp_reconnect);
+		mainRecvClient.setConnectionOptions(sldm_opts.amqp_broker_one.amqp_allow_sasl,sldm_opts.amqp_broker_one.amqp_allow_insecure,sldm_opts.amqp_broker_one.amqp_reconnect);
 		
-		proton::container(recvClient).run();
+		mainRecvClient.setClientID("1");
 
-		return 0;
+		// Set the QuadKey filter
+		if(sldm_opts.quadkFilter_enabled==true) {
+			mainRecvClient.setFilter(filter_str);
+		}
+
+		proton::container(mainRecvClient).run();
 	} catch (const std::exception& e) {
 		std::cerr << e.what() << std::endl;
 		terminatorFlag = true;
@@ -388,6 +513,22 @@ int main(int argc, char **argv) {
 
 	pthread_join(dbcleaner_tid,nullptr);
 	pthread_join(vehviz_tid,nullptr);
+
+	if(sldm_opts.num_amqp_x_enabled>0) {
+		fprintf(stdout,"[INFO] Terminating the other AMQP clients...\n");
+		// Close the connection on all the other brokers (if multiple clients are used)
+		amqpclimutex.lock();
+		for (auto const& [key, val] : amqpclimap) {
+			fprintf(stdout,"[INFO] Terminating client %d...\n",key+2);
+			val->force_container_stop();
+		}
+		amqpclimutex.unlock();
+	}
+
+	// Joining threads from additional AMQP clients
+	for(std::vector<std::thread>::size_type i=0;i<amqp_x_threads.size();i++) {
+		amqp_x_threads[i].join();
+	}
 
 	db_ptr->clear();
 

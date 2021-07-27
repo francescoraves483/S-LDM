@@ -29,8 +29,79 @@
 #include <float.h>
 #include "options_strings.h"
 
+// The way in which this module defines the AMQP broker options for the (possible) additional AMQP Client relies on X-Macros
+// The "CFG" macros below should contain the fields of the struct containing the options for the AMQP clients
+// The fiels should be specified as (field name,field type). 'field type' can be either "options_string", which works in
+// a similar way as C++ std::string (but it is needed here as this module is written in plain C), or "bool", for the time
+// being. Adding additional types requires to edit AMQPCLIENT_FIELDS_ARRAY_FILL_DECLARE(name,type) and add additional "else if"
+// branches checking for "strcmp(#type,"<new supported type here>")==0"
+// The content of the broker_options_t structure is then automatically generated depending on what is defined below
+// This macro also defines the content of the options structure for the main AMQP client
+#define AMQPCLIENT_CONFIG_FIELDS \
+	CFG(amqp_username,options_string) \
+	CFG(amqp_password,options_string) \
+	CFG(amqp_reconnect,bool) \
+	CFG(amqp_allow_sasl,bool) \
+	CFG(amqp_allow_insecure,bool) \
+	CFG(broker_url,options_string) \
+	CFG(broker_topic,options_string)
+
+// The bool type is set to "_Bool" because "_Bool" is actually the true type name inside stdbool.h ("bool" is just an alias)
+// This macro is used to automatically define several functions (used in options.c) to fill in the different fields of each
+// element of the array (broker_options_t *amqp_broker_x) containing the options for the possible additional AMQP clients
+// The generated functions will all accept the same arguments (optarg, i.e., the comma-separated string read from command line, 
+// num_clients, i.e., total number of additional AMQP clients, broker_opts, i.e., a pointer to the AMQP clients options array)
+// and will be named fill_AMQPClient_options_array_<field name>() (e.g., fill_AMQPClient_options_array_amqp_username())
+// "*((bool *)&(broker_opts[i].name))" is indeed ugly and seems useless, but it is used as a trick to properly compile the generated
+// code. Indeed, the preprocessor will generate the lines "broker_opts[i].name=true/false" for all the fiels, no matter whether
+// they are boolean or options_string. Even if these lines will never be reached for the generated functions working on
+// options_string fields, they need nevertheless to be compiled. Thus, we take the pointer to the field, we convert it
+// to a boolean type pointer and then we dereference that pointer to get a "boolean". For real boolean fields the result 
+// is the same as a direct assignment, while for options_string these lines will never be reached, but, at least, now
+// everthing compiles since both the lhs and rhs values are now interpreted as "boolean".
+#define AMQPCLIENT_FIELDS_ARRAY_FILL_DECLARE(name,type) \
+static inline bool fill_AMQPClient_options_array_##name(char * optarg, int num_clients, broker_options_t *broker_opts) { \
+	char *saveptr_strtok=NULL; \
+	char *str_ptr; \
+	unsigned int cnt=0; \
+	for(int i=0;i<num_clients;i++) { \
+		str_ptr=strtok_r(i==0 ? optarg : NULL,",",&saveptr_strtok); \
+	 	if(str_ptr!=NULL) { \
+	 		if(strcmp(#type,"options_string")==0) { \
+	 			if(strcmp(str_ptr," ")==0) { \
+	 				options_string_push((options_string *)&(broker_opts[i].name),""); \
+	 			} else { \
+		 			if(!options_string_push((options_string *)&(broker_opts[i].name),str_ptr)) { \
+						fprintf(stderr,"Error in parsing the AMQP client option: %s. Client: %d.\n",#name,i); \
+					} \
+				} \
+	 		} else if(strcmp(#type,"_Bool")==0) { \
+	 			if(strcmp(str_ptr,"true")==0) { \
+	 				*((bool *)&(broker_opts[i].name))=true; \
+	 			} else if(strcmp(str_ptr,"false")==0) { \
+	 				*((bool *)&(broker_opts[i].name))=false; \
+	 			} else if(strcmp(str_ptr,"default")==0) { \
+	 				*((bool *)&(broker_opts[i].name))=false; \
+	 			} else { \
+	 				fprintf(stderr,"Error in parsing the AMQP client option: %s. %.15s is not a valid boolean value (true,false,default). Client: %d.\n",#name,str_ptr,i); \
+	 				return false; \
+	 			} \
+	 		} else { \
+	 			return false; \
+	 		} \
+	 		cnt++; \
+	 	} else { \
+			break; \
+		} \
+	} \
+	if(cnt!=num_clients) { \
+		return false; \
+	} \
+	return true; \
+}
+
 // Insert here the version string
-#define VERSION_STR "S-LDM 0.3.4-beta"
+#define VERSION_STR "S-LDM 1.0.0-beta" // 1.0.0 -> first (initial) cross-border version
 
 #define DEFAULT_BROKER_URL "127.0.0.1:5672"
 #define DEFAULT_BROKER_QUEUE "topic://5gcarmen.examples"
@@ -49,24 +120,23 @@
 // Default Vehicle Visualizer web-based GUI update rate, in seconds
 #define DEFAULT_VEHVIZ_UPDATE_INTERVAL_SECONDS 0.5
 
+// Maximum number of supported AMQP clients
+#define MAX_ADDITIONAL_AMQP_CLIENTS 10
+
 // Valid options
 // Any new option should be handled in the switch-case inside parse_options() and the corresponding char should be added to VALID_OPTS
 // If an option accepts an additional argument, it is followed by ':'
-#define VALID_OPTS "hvA:E:F:cU:Q:r:s:Z:z:w:L:u:p:RSIC:"
+#define VALID_OPTS "hvA:E:F:cU:Q:r:s:Z:z:w:L:u:p:RSIC:g"
 
 #define INIT_CODE 0xAE
 
 #define INVALID_LONLAT -DBL_MAX
 
+// Automatically generated thanks to AMQPCLIENT_CONFIG_FIELDS (X-Macros)
 typedef struct broker_options {
-	options_string amqp_username; // -u option for the main AMQP broker
-	options_string amqp_password; // -p option for the main AMQP broker
-	bool amqp_reconnect; // -R option for the main AMQP broker
-	bool amqp_allow_sasl; // -S option for the main AMQP broker
-	bool amqp_allow_insecure; // -I option for the main AMQP broker
-
-	options_string broker_url; // AMQP broker address (including the port number)
-	options_string broker_topic;
+	#define CFG(name,type) type name;
+		AMQPCLIENT_CONFIG_FIELDS
+	#undef CFG
 } broker_options_t;
 
 typedef struct options {
@@ -94,12 +164,21 @@ typedef struct options {
 
 	options_string logfile_name; // Name of the log file where performance data should be store (if specified)
 
-	broker_options_t amqp_broker_one; // "one" because we may implement the subscription to multiple brokers in the future
+	broker_options_t amqp_broker_one; // "one" because this the main AMQP client; all the other clients are set via "amqp_broker_x"
+
+	// Additional AMQP clients options
+	// ----------------------------------
+	unsigned int num_amqp_x_enabled; // Number of additional AMQP clients which have been activated (>0 if any additional client has been activated)
+	broker_options_t *amqp_broker_x; // Array of num_amqp_x_enabled elements (one element for the configuration of each additioanl AMQP client)
+	// ----------------------------------
 
 	double context_radius; // Radius (in m) of the "context" around a triggering vehicle (used for the time being only when sending the data to the Maneuvering Service through the simple indicatorTriggerManager)
 	double vehviz_update_interval_sec; // Advanced option: modifies the update rate of the web-based GUI. Warning: decreasing this too much will affect performance! This value cannot be less than 0.05 s and more than 1 s.
 
 	bool indicatorTrgMan_enabled; // 'true' if the turn indicator trigger manager is enabled (default option), 'false' otherwise
+
+	bool ageCheck_enabled; // (-g option to set this to 'false') 'true' if an 'age check' on the received data should be performed before updating the database, 'false' otherwise. Default: 'true'.
+	bool quadkFilter_enabled; // 'true' if the QuadKey filter is enabled (messages are pre-filtered by the AMQP broker depending on the Quadkey property), 'false' otherwise (default: 'true' - it must be explicitly disabled, if needed)
 } options_t;
 
 void options_initialize(struct options *options);

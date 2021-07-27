@@ -1,0 +1,131 @@
+[LOG - AMQPClient 1] Connection successfully established.
+[LOG - MESSAGE DECODER (Client 1)] ProcTimeMilliseconds=0.010025
+[LOG - AREA FILTER (Client 1)] ProcTimeMilliseconds=0.000169
+[LOG - DATABASE UPDATE (Client 1)] LowFrequencyContainerAvail=1 InsertReturnValue=0 ProcTimeMilliseconds=0.014167
+[LOG - TRIGGER CHECK (Client 1)] TriggerEnabled=1 ExteriorLightsAvail=1 CrossBrdTriggerMode=0 IsInsideInternalArea=1 ProcTimeMilliseconds=0.000075
+[LOG - FULL CAM PROCESSING (Client1)] (Tue Jul 27 10:44:15 2021) StationID=6 Coordinates=46.1197992:11.0867488 InstUpdatePeriod=-1.000 CAMTimestamp=5891 GNTimestamp=409474693 CAMTimestampDiff=1 GNTimestampDiff=127 ProcTimeMilliseconds=0.032157
+[LOG - MESSAGE DECODER (Client 1)] ProcTimeMilliseconds=0.009281
+[LOG - AREA FILTER (Client 1)] ProcTimeMilliseconds=0.000154
+[LOG - DATABASE UPDATE (Client 1)] LowFrequencyContainerAvail=1 InsertReturnValue=0 ProcTimeMilliseconds=0.007544
+[LOG - TRIGGER CHECK (Client 1)] TriggerEnabled=1 ExteriorLightsAvail=0 CrossBrdTriggerMode=0 IsInsideInternalArea=1 ProcTimeMilliseconds=0.000107
+[LOG - FULL CAM PROCESSING (Client1)] (Tue Jul 27 10:44:16 2021) StationID=5 Coordinates=46.1200215:11.0864245 InstUpdatePeriod=-1.000 CAMTimestamp=5950 GNTimestamp=409474843 CAMTimestampDiff=1 GNTimestampDiff=36 ProcTimeMilliseconds=0.023317
+[LOG - MESSAGE DECODER (Client 1)] ProcTimeMilliseconds=0.011220
+[LOG - AREA FILTER (Client 1)] ProcTimeMilliseconds=0.000136
+[LOG - DATABASE UPDATE (Client 1)] LowFrequencyContainerAvail=1 InsertReturnValue=0 ProcTimeMilliseconds=0.007772
+[LOG - TRIGGER CHECK (Client 1)] TriggerEnabled=1 ExteriorLightsAvail=1 CrossBrdTriggerMode=0 IsInsideInternalArea=1 ProcTimeMilliseconds=0.000099
+[LOG - FULL CAM PROCESSING (Client1)] (Tue Jul 27 10:44:16 2021) StationID=1 Coordinates=46.1209572:11.0859019 InstUpdatePeriod=-1.000 CAMTimestamp=5959 GNTimestamp=409474423 CAMTimestampDiff=1 GNTimestampDiff=465 ProcTimeMilliseconds=0.025622
+[LOG - MESSAGE DECODER (Client 1)] ProcTimeMilliseconds=0.011490
+[LOG - AREA FILTER (Client 1)] ProcTimeMilliseconds=0.000179
+[LOG - DATABASE UPDATE (Client 1)] LowFrequencyContainerAvail=1 InsertReturnValue=0 ProcTimeMilliseconds=0.008493
+[LOG - TRIGGER CHECK (Client 1)] TriggerEnabled=1 ExteriorLightsAvail=1 CrossBrdTriggerMode=0 IsInsideInternalArea=1 ProcTimeMilliseconds=0.000102
+[LOG - FULL CAM PROCESSING (Client1)] (Tue Jul 27 10:44:16 2021) StationID=2 Coordinates=46.1204675:11.0861820 InstUpdatePeriod=-1.000 CAMTimestamp=5989 GNTimestamp=409474273 CAMTimestampDiff=1 GNTimestampDiff=645 ProcTimeMilliseconds=0.027211
+[LOG - MESSAGE DECODER (Client 1)] ProcTimeMilliseconds=0.009390
+[LOG - AREA FILTER (Client 1)] ProcTimeMilliseconds=0.000149
+[LOG - DATABASE UPDATE (Client 1)] LowFrequencyContainerAvail=1 InsertReturnValue=1 ProcTimeMilliseconds=0.016787
+[LOG - TRIGGER CHECK (Client 1)] TriggerEnabled=1 ExteriorLightsAvail=0 CrossBrdTriggerMode=0 IsInsideInternalArea=1 ProcTimeMilliseconds=0.000055
+[LOG - FULL CAM PROCESSING (Client1)] (Tue Jul 27 10:44:16 2021) StationID=5 Coordinates=46.1200307:11.0864190 InstUpdatePeriod=100.269 CAMTimestamp=6050 GNTimestamp=409474843 CAMTimestampDiff=1 GNTimestampDiff=136 ProcTimeMilliseconds=0.032675
+[LOG - MESSAGE DECODER (Client 1)] ProcTimeMilliseconds=0.017633
+[LOG - AREA FILTER (Client 1)] ProcTimeMilliseconds=0.000215
+[LOG - DATABASE UPDATE (Client 1)] LowFrequencyContainerAvail=1 InsertReturnValue=0 ProcTimeMilliseconds=0.007571
+[LOG - TRIGGER CHECK (Client 1)] TriggerEnabled=1 ExteriorLightsAvail=1 CrossBrdTriggerMode=0 IsInsideInternalArea=1 ProcTimeMilliseconds=0.000193
+[LOG - FULL CAM PROCESSING (Client1)] (Tue Jul 27 10:44:16 2021) StationID=3 Coordinates=46.1203414:11.0862460 InstUpdatePeriod=-1.000 CAMTimestamp=6158 GNTimestamp=409474133 CAMTimestampDiff=1 GNTimestampDiff=954 ProcTimeMilliseconds=0.033927
+[LOG - MESSAGE DECODER (Client 1)] ProcTimeMilliseconds=0.006802
+[LOG - AREA FILTER (Client 1)] ProcTimeMilliseconds=0.000049
+[LOG - DATABASE UPDATE (Client 1)] LowFrequencyContainerAvail=1 InsertReturnValue=1 ProcTimeMilliseconds=0.005581
+[LOG - TRIGGER CHECK (Client 1)] TriggerEnabled=1 ExteriorLightsAvail=1 CrossBrdTriggerMode=0 IsInsideInternalArea=1 ProcTimeMilliseconds=0.000111
+[LOG - FULL CAM PROCESSING (Client1)] (Tue Jul 27 10:44:16 2021) StationID=1 Coordinates=46.1209877:11.0858865 InstUpdatePeriod=199.691 CAMTimestamp=6159 GNTimestamp=409474423 CAMTimestampDiff=0 GNTimestampDiff=664 ProcTimeMilliseconds=0.043438
+[LOG - MESSAGE DECODER (Client 1)] ProcTimeMilliseconds=0.015795
+[LOG - AREA FILTER (Client 1)] ProcTimeMilliseconds=0.000226
+[LOG - DATABASE UPDATE (Client 1)] LowFrequencyContainerAvail=1 InsertReturnValue=0 ProcTimeMilliseconds=0.010799
+[LOG - TRIGGER CHECK (Client 1)] TriggerEnabled=1 ExteriorLightsAvail=1 CrossBrdTriggerMode=0 IsInsideInternalArea=1 ProcTimeMilliseconds=0.000201
+[LOG - FULL CAM PROCESSING (Client1)] (Tue Jul 27 10:44:16 2021) StationID=4 Coordinates=46.1202035:11.0863160 InstUpdatePeriod=-1.000 CAMTimestamp=6198 GNTimestamp=409474983 CAMTimestampDiff=1 GNTimestampDiff=144 ProcTimeMilliseconds=0.035807
+[LOG - MESSAGE DECODER (Client 1)] ProcTimeMilliseconds=0.011932
+[LOG - AREA FILTER (Client 1)] ProcTimeMilliseconds=0.000142
+[LOG - DATABASE UPDATE (Client 1)] LowFrequencyContainerAvail=1 InsertReturnValue=1 ProcTimeMilliseconds=0.007500
+[LOG - TRIGGER CHECK (Client 1)] TriggerEnabled=1 ExteriorLightsAvail=0 CrossBrdTriggerMode=0 IsInsideInternalArea=1 ProcTimeMilliseconds=0.000124
+[LOG - FULL CAM PROCESSING (Client1)] (Tue Jul 27 10:44:16 2021) StationID=5 Coordinates=46.1200490:11.0864081 InstUpdatePeriod=199.409 CAMTimestamp=6250 GNTimestamp=409474843 CAMTimestampDiff=1 GNTimestampDiff=336 ProcTimeMilliseconds=0.027862
+[LOG - MESSAGE DECODER (Client 1)] ProcTimeMilliseconds=0.012054
+[LOG - AREA FILTER (Client 1)] ProcTimeMilliseconds=0.000194
+[LOG - DATABASE UPDATE (Client 1)] LowFrequencyContainerAvail=1 InsertReturnValue=1 ProcTimeMilliseconds=0.007387
+[LOG - TRIGGER CHECK (Client 1)] TriggerEnabled=1 ExteriorLightsAvail=1 CrossBrdTriggerMode=0 IsInsideInternalArea=1 ProcTimeMilliseconds=0.000238
+[LOG - FULL CAM PROCESSING (Client1)] (Tue Jul 27 10:44:16 2021) StationID=6 Coordinates=46.1198204:11.0867064 InstUpdatePeriod=399.933 CAMTimestamp=6291 GNTimestamp=409474693 CAMTimestampDiff=1 GNTimestampDiff=527 ProcTimeMilliseconds=0.028035
+[LOG - MESSAGE DECODER (Client 1)] ProcTimeMilliseconds=0.012174
+[LOG - AREA FILTER (Client 1)] ProcTimeMilliseconds=0.000201
+[LOG - DATABASE UPDATE (Client 1)] LowFrequencyContainerAvail=1 InsertReturnValue=1 ProcTimeMilliseconds=0.007519
+[LOG - TRIGGER CHECK (Client 1)] TriggerEnabled=1 ExteriorLightsAvail=1 CrossBrdTriggerMode=0 IsInsideInternalArea=1 ProcTimeMilliseconds=0.000210
+[LOG - FULL CAM PROCESSING (Client1)] (Tue Jul 27 10:44:16 2021) StationID=1 Coordinates=46.1210193:11.0858706 InstUpdatePeriod=200.396 CAMTimestamp=6359 GNTimestamp=409474423 CAMTimestampDiff=1 GNTimestampDiff=865 ProcTimeMilliseconds=0.027544
+[LOG - MESSAGE DECODER (Client 1)] ProcTimeMilliseconds=0.013872
+[LOG - AREA FILTER (Client 1)] ProcTimeMilliseconds=0.000117
+[LOG - DATABASE UPDATE (Client 1)] LowFrequencyContainerAvail=1 InsertReturnValue=1 ProcTimeMilliseconds=0.008143
+[LOG - TRIGGER CHECK (Client 1)] TriggerEnabled=1 ExteriorLightsAvail=1 CrossBrdTriggerMode=0 IsInsideInternalArea=1 ProcTimeMilliseconds=0.000198
+[LOG - FULL CAM PROCESSING (Client1)] (Tue Jul 27 10:44:16 2021) StationID=2 Coordinates=46.1205036:11.0861637 InstUpdatePeriod=399.632 CAMTimestamp=6389 GNTimestamp=409475273 CAMTimestampDiff=1 GNTimestampDiff=45 ProcTimeMilliseconds=0.030136
+[LOG - MESSAGE DECODER (Client 1)] ProcTimeMilliseconds=0.013611
+[LOG - AREA FILTER (Client 1)] ProcTimeMilliseconds=0.000222
+[LOG - DATABASE UPDATE (Client 1)] LowFrequencyContainerAvail=1 InsertReturnValue=1 ProcTimeMilliseconds=0.007187
+[LOG - TRIGGER CHECK (Client 1)] TriggerEnabled=1 ExteriorLightsAvail=1 CrossBrdTriggerMode=0 IsInsideInternalArea=1 ProcTimeMilliseconds=0.000511
+[LOG - FULL CAM PROCESSING (Client1)] (Tue Jul 27 10:44:16 2021) StationID=5 Coordinates=46.1200674:11.0863971 InstUpdatePeriod=200.143 CAMTimestamp=6450 GNTimestamp=409474843 CAMTimestampDiff=1 GNTimestampDiff=536 ProcTimeMilliseconds=0.029055
+[LOG - MESSAGE DECODER (Client 1)] ProcTimeMilliseconds=0.012727
+[LOG - AREA FILTER (Client 1)] ProcTimeMilliseconds=0.000205
+[LOG - DATABASE UPDATE (Client 1)] LowFrequencyContainerAvail=1 InsertReturnValue=1 ProcTimeMilliseconds=0.007188
+[LOG - TRIGGER CHECK (Client 1)] TriggerEnabled=1 ExteriorLightsAvail=1 CrossBrdTriggerMode=0 IsInsideInternalArea=1 ProcTimeMilliseconds=0.000241
+[LOG - FULL CAM PROCESSING (Client1)] (Tue Jul 27 10:44:16 2021) StationID=3 Coordinates=46.1203775:11.0862277 InstUpdatePeriod=399.897 CAMTimestamp=6558 GNTimestamp=409475133 CAMTimestampDiff=1 GNTimestampDiff=354 ProcTimeMilliseconds=0.027837
+[LOG - MESSAGE DECODER (Client 1)] ProcTimeMilliseconds=0.008564
+[LOG - AREA FILTER (Client 1)] ProcTimeMilliseconds=0.000078
+[LOG - DATABASE UPDATE (Client 1)] LowFrequencyContainerAvail=1 InsertReturnValue=1 ProcTimeMilliseconds=0.004131
+[LOG - TRIGGER CHECK (Client 1)] TriggerEnabled=1 ExteriorLightsAvail=1 CrossBrdTriggerMode=0 IsInsideInternalArea=1 ProcTimeMilliseconds=0.000108
+[LOG - FULL CAM PROCESSING (Client1)] (Tue Jul 27 10:44:16 2021) StationID=1 Coordinates=46.1210519:11.0858542 InstUpdatePeriod=199.481 CAMTimestamp=6559 GNTimestamp=409475423 CAMTimestampDiff=0 GNTimestampDiff=64 ProcTimeMilliseconds=0.018805
+[LOG - MESSAGE DECODER (Client 1)] ProcTimeMilliseconds=0.011270
+[LOG - AREA FILTER (Client 1)] ProcTimeMilliseconds=0.000168
+[LOG - DATABASE UPDATE (Client 1)] LowFrequencyContainerAvail=1 InsertReturnValue=1 ProcTimeMilliseconds=0.007025
+[LOG - TRIGGER CHECK (Client 1)] TriggerEnabled=1 ExteriorLightsAvail=1 CrossBrdTriggerMode=0 IsInsideInternalArea=1 ProcTimeMilliseconds=0.000201
+[LOG - FULL CAM PROCESSING (Client1)] (Tue Jul 27 10:44:16 2021) StationID=4 Coordinates=46.1202397:11.0862977 InstUpdatePeriod=399.731 CAMTimestamp=6598 GNTimestamp=409474983 CAMTimestampDiff=1 GNTimestampDiff=544 ProcTimeMilliseconds=0.025647
+[LOG - MESSAGE DECODER (Client 1)] ProcTimeMilliseconds=0.013614
+[LOG - AREA FILTER (Client 1)] ProcTimeMilliseconds=0.000124
+[LOG - DATABASE UPDATE (Client 1)] LowFrequencyContainerAvail=1 InsertReturnValue=1 ProcTimeMilliseconds=0.007229
+[LOG - TRIGGER CHECK (Client 1)] TriggerEnabled=1 ExteriorLightsAvail=1 CrossBrdTriggerMode=0 IsInsideInternalArea=1 ProcTimeMilliseconds=0.000206
+[LOG - FULL CAM PROCESSING (Client1)] (Tue Jul 27 10:44:16 2021) StationID=6 Coordinates=46.1198416:11.0866641 InstUpdatePeriod=399.735 CAMTimestamp=6691 GNTimestamp=409474693 CAMTimestampDiff=0 GNTimestampDiff=926 ProcTimeMilliseconds=0.029079
+[LOG - MESSAGE DECODER (Client 1)] ProcTimeMilliseconds=0.011419
+[LOG - AREA FILTER (Client 1)] ProcTimeMilliseconds=0.000147
+[LOG - DATABASE UPDATE (Client 1)] LowFrequencyContainerAvail=1 InsertReturnValue=1 ProcTimeMilliseconds=0.007060
+[LOG - TRIGGER CHECK (Client 1)] TriggerEnabled=1 ExteriorLightsAvail=1 CrossBrdTriggerMode=0 IsInsideInternalArea=1 ProcTimeMilliseconds=0.000212
+[LOG - FULL CAM PROCESSING (Client1)] (Tue Jul 27 10:44:16 2021) StationID=5 Coordinates=46.1200949:11.0863807 InstUpdatePeriod=300.149 CAMTimestamp=6750 GNTimestamp=409474843 CAMTimestampDiff=1 GNTimestampDiff=836 ProcTimeMilliseconds=0.025632
+[LOG - MESSAGE DECODER (Client 1)] ProcTimeMilliseconds=0.011940
+[LOG - AREA FILTER (Client 1)] ProcTimeMilliseconds=0.000096
+[LOG - DATABASE UPDATE (Client 1)] LowFrequencyContainerAvail=1 InsertReturnValue=1 ProcTimeMilliseconds=0.006794
+[LOG - TRIGGER CHECK (Client 1)] TriggerEnabled=1 ExteriorLightsAvail=1 CrossBrdTriggerMode=0 IsInsideInternalArea=1 ProcTimeMilliseconds=0.000260
+[LOG - FULL CAM PROCESSING (Client1)] (Tue Jul 27 10:44:16 2021) StationID=1 Coordinates=46.1210856:11.0858372 InstUpdatePeriod=200.205 CAMTimestamp=6759 GNTimestamp=409475423 CAMTimestampDiff=0 GNTimestampDiff=264 ProcTimeMilliseconds=0.025338
+[LOG - MESSAGE DECODER (Client 1)] ProcTimeMilliseconds=0.013359
+[LOG - AREA FILTER (Client 1)] ProcTimeMilliseconds=0.000157
+[LOG - DATABASE UPDATE (Client 1)] LowFrequencyContainerAvail=1 InsertReturnValue=1 ProcTimeMilliseconds=0.006984
+[LOG - TRIGGER CHECK (Client 1)] TriggerEnabled=1 ExteriorLightsAvail=1 CrossBrdTriggerMode=0 IsInsideInternalArea=1 ProcTimeMilliseconds=0.000420
+[LOG - FULL CAM PROCESSING (Client1)] (Tue Jul 27 10:44:16 2021) StationID=2 Coordinates=46.1205397:11.0861453 InstUpdatePeriod=400.609 CAMTimestamp=6790 GNTimestamp=409475273 CAMTimestampDiff=0 GNTimestampDiff=445 ProcTimeMilliseconds=0.054245
+[LOG - MESSAGE DECODER (Client 1)] ProcTimeMilliseconds=0.011398
+[LOG - AREA FILTER (Client 1)] ProcTimeMilliseconds=0.000189
+[LOG - DATABASE UPDATE (Client 1)] LowFrequencyContainerAvail=1 InsertReturnValue=1 ProcTimeMilliseconds=0.005982
+[LOG - TRIGGER CHECK (Client 1)] TriggerEnabled=1 ExteriorLightsAvail=1 CrossBrdTriggerMode=0 IsInsideInternalArea=1 ProcTimeMilliseconds=0.000105
+[LOG - FULL CAM PROCESSING (Client1)] (Tue Jul 27 10:44:17 2021) StationID=3 Coordinates=46.1204136:11.0862093 InstUpdatePeriod=400.071 CAMTimestamp=6958 GNTimestamp=409475133 CAMTimestampDiff=1 GNTimestampDiff=754 ProcTimeMilliseconds=0.024227
+[LOG - MESSAGE DECODER (Client 1)] ProcTimeMilliseconds=0.005697
+[LOG - AREA FILTER (Client 1)] ProcTimeMilliseconds=0.000145
+[LOG - DATABASE UPDATE (Client 1)] LowFrequencyContainerAvail=1 InsertReturnValue=1 ProcTimeMilliseconds=0.003861
+[LOG - TRIGGER CHECK (Client 1)] TriggerEnabled=1 ExteriorLightsAvail=1 CrossBrdTriggerMode=0 IsInsideInternalArea=1 ProcTimeMilliseconds=0.000076
+[LOG - FULL CAM PROCESSING (Client1)] (Tue Jul 27 10:44:17 2021) StationID=1 Coordinates=46.1211202:11.0858198 InstUpdatePeriod=199.874 CAMTimestamp=6959 GNTimestamp=409475423 CAMTimestampDiff=0 GNTimestampDiff=464 ProcTimeMilliseconds=0.014031
+[LOG - MESSAGE DECODER (Client 1)] ProcTimeMilliseconds=0.010693
+[LOG - AREA FILTER (Client 1)] ProcTimeMilliseconds=0.000179
+[LOG - DATABASE UPDATE (Client 1)] LowFrequencyContainerAvail=1 InsertReturnValue=1 ProcTimeMilliseconds=0.006392
+[LOG - TRIGGER CHECK (Client 1)] TriggerEnabled=1 ExteriorLightsAvail=1 CrossBrdTriggerMode=0 IsInsideInternalArea=1 ProcTimeMilliseconds=0.000096
+[LOG - FULL CAM PROCESSING (Client1)] (Tue Jul 27 10:44:17 2021) StationID=4 Coordinates=46.1202758:11.0862793 InstUpdatePeriod=400.054 CAMTimestamp=6998 GNTimestamp=409474983 CAMTimestampDiff=1 GNTimestampDiff=944 ProcTimeMilliseconds=0.023800
+[LOG - MESSAGE DECODER (Client 1)] ProcTimeMilliseconds=0.009988
+[LOG - AREA FILTER (Client 1)] ProcTimeMilliseconds=0.000147
+[LOG - DATABASE UPDATE (Client 1)] LowFrequencyContainerAvail=1 InsertReturnValue=1 ProcTimeMilliseconds=0.006128
+[LOG - TRIGGER CHECK (Client 1)] TriggerEnabled=1 ExteriorLightsAvail=1 CrossBrdTriggerMode=0 IsInsideInternalArea=1 ProcTimeMilliseconds=0.000089
+[LOG - FULL CAM PROCESSING (Client1)] (Tue Jul 27 10:44:17 2021) StationID=6 Coordinates=46.1198656:11.0866252 InstUpdatePeriod=400.024 CAMTimestamp=7091 GNTimestamp=409475693 CAMTimestampDiff=0 GNTimestampDiff=326 ProcTimeMilliseconds=0.022598
+[LOG - MESSAGE DECODER (Client 1)] ProcTimeMilliseconds=0.010652
+[LOG - AREA FILTER (Client 1)] ProcTimeMilliseconds=0.000146
+[LOG - DATABASE UPDATE (Client 1)] LowFrequencyContainerAvail=1 InsertReturnValue=1 ProcTimeMilliseconds=0.005485
+[LOG - TRIGGER CHECK (Client 1)] TriggerEnabled=1 ExteriorLightsAvail=1 CrossBrdTriggerMode=0 IsInsideInternalArea=1 ProcTimeMilliseconds=0.000096
+[LOG - FULL CAM PROCESSING (Client1)] (Tue Jul 27 10:44:17 2021) StationID=5 Coordinates=46.1201316:11.0863588 InstUpdatePeriod=399.992 CAMTimestamp=7150 GNTimestamp=409475843 CAMTimestampDiff=1 GNTimestampDiff=236 ProcTimeMilliseconds=0.022236
+[LOG - MESSAGE DECODER (Client 1)] ProcTimeMilliseconds=0.010345
+[LOG - AREA FILTER (Client 1)] ProcTimeMilliseconds=0.000149
+[LOG - DATABASE UPDATE (Client 1)] LowFrequencyContainerAvail=1 InsertReturnValue=1 ProcTimeMilliseconds=0.005857
+[LOG - TRIGGER CHECK (Client 1)] TriggerEnabled=1 ExteriorLightsAvail=1 CrossBrdTriggerMode=0 IsInsideInternalArea=1 ProcTimeMilliseconds=0.000102
+[LOG - FULL CAM PROCESSING (Client1)] (Tue Jul 27 10:44:17 2021) StationID=1 Coordinates=46.1211559:11.0858018 InstUpdatePeriod=200.221 CAMTimestamp
