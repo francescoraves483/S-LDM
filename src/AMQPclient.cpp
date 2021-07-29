@@ -521,10 +521,11 @@ AMQPClient::on_message(proton::delivery &d, proton::message &msg) {
 		if(m_logfile_name!="") {
 			main_af=get_timestamp_ns();
 
-			logfprintf(m_logfile_file,std::string("FULL CAM PROCESSING (Client") + m_client_id + std::string(")"),"StationID=%u Coordinates=%.7lf:%.7lf InstUpdatePeriod=%.3lf"
+			logfprintf(m_logfile_file,std::string("FULL CAM PROCESSING (Client") + m_client_id + std::string(")"),"StationID=%u Coordinates=%.7lf:%.7lf Heading=%.1lf InstUpdatePeriod=%.3lf"
 				" CAMTimestamp=%ld GNTimestamp=%lu CAMTimestampDiff=%ld GNTimestampDiff=%ld"
 				" ProcTimeMilliseconds=%.6lf\n",
 				stationID,lat,lon,
+				vehdata.heading,
 				l_inst_period,
 				vehdata.camTimestamp,vehdata.gnTimestamp,get_timestamp_ms_cam()-vehdata.camTimestamp,get_timestamp_ms_gn()-vehdata.gnTimestamp,
 				(main_af-main_bf)/1000000.0);
