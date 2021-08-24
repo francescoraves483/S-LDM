@@ -231,6 +231,9 @@ int main(int argc, char **argv) {
 		exit(EXIT_FAILURE);
 	}
 
+	std::time_t now = std::time(nullptr);
+	fprintf(stdout,"[INFO] The S-LDM started at %.24s, corresponding to GNTimestamp = %lu\n",std::ctime(&now),get_timestamp_ms_gn());
+
 	// Print, as an example, the full (internal + external) area covered by the S-LDM
 	std::cout << "This S-LDM instance will cover the full area defined by: [" << 
 		sldm_opts.min_lat-sldm_opts.ext_lat_factor << "," << sldm_opts.min_lon-sldm_opts.ext_lon_factor << "],[" <<

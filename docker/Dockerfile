@@ -10,7 +10,9 @@ ENV SLDM_EXTERNAL_AREA_LON_FACTOR 0.0002
 # External mapped port for 5G-CARMEN AMQP testing -> 31129
 ENV BROKER_URL 127.0.0.1:5672
 # ENV BROKER_URL 188.125.17.78:31129 -> MTA MEC broker address (local copy)
-# ENV BROKER_URL 163.162.42.24:5672 -> TIM MEC broker address (real MNO AMQP)
+# ENV BROKER_URL 213.162.90.227:5672 -> MTA MEC broker address (real MNO AMQP) - GUI accessible at 213.162.90.229:31128
+# ENV BROKER_URL 163.162.42.24:5672 -> TIM MEC broker address (real MNO AMQP) - GUI accessible at 163.162.42.19:31128 (requires firewall opening)
+# ENV BROKER_URL 80.159.227.2:5672 -> DTAG MEC broker address (real MNO AMQP) - GUI accessible at 80.159.227.46:31128
 ENV AMQP_TOPIC topic://5gcarmen.examples
 ENV MS_REST_ADDRESS http://localhost
 ENV MS_REST_PORT 8000
