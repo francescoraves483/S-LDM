@@ -233,6 +233,7 @@ int main(int argc, char **argv) {
 
 	std::time_t now = std::time(nullptr);
 	fprintf(stdout,"[INFO] The S-LDM started at %.24s, corresponding to GNTimestamp = %lu\n",std::ctime(&now),get_timestamp_ms_gn());
+	fprintf(stdout,"[INFO] S-LDM version: %s\n",VERSION_STR);
 
 	// Print, as an example, the full (internal + external) area covered by the S-LDM
 	std::cout << "This S-LDM instance will cover the full area defined by: [" << 
