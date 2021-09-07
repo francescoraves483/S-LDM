@@ -42,49 +42,69 @@ void AMQPclient_t(ldmmap::LDMMap *db_ptr,options_t *opts_ptr,std::string logfile
 		return;
 	}
 
-	try {
-		AMQPClient recvClient(std::string(options_string_pop(opts_ptr->amqp_broker_x[clientIndex].broker_url)), std::string(options_string_pop(opts_ptr->amqp_broker_x[clientIndex].broker_topic)), opts_ptr->min_lat,opts_ptr->max_lat, opts_ptr->min_lon, opts_ptr->max_lon, opts_ptr, db_ptr, logfile_name);
-		
-		// The indicator trigger manager is disabled by default in AMQPClient, unless it is explicitely enabled with a call to setIndicatorTriggerManager(true)
-		if(opts_ptr->indicatorTrgMan_enabled==true) {
-			recvClient.setIndicatorTriggerManager(itm_ptr);
-		}
-
-		// Set username, if specified
-		if(options_string_len(opts_ptr->amqp_broker_x[clientIndex].amqp_username)>0) {
-			recvClient.setUsername(std::string(options_string_pop(opts_ptr->amqp_broker_x[clientIndex].amqp_username)));
-		}
-
-		// Set password, if specified
-		if(options_string_len(opts_ptr->amqp_broker_x[clientIndex].amqp_password)>0) {
-			recvClient.setPassword(std::string(options_string_pop(opts_ptr->amqp_broker_x[clientIndex].amqp_password)));
-		}
-
-		// Set connection options (they all default to "false" - see also options.c/broker_options_inizialize())
-		recvClient.setConnectionOptions(opts_ptr->amqp_broker_x[clientIndex].amqp_allow_sasl,opts_ptr->amqp_broker_x[clientIndex].amqp_allow_insecure,opts_ptr->amqp_broker_x[clientIndex].amqp_reconnect);
-		
-		recvClient.setClientID(clientID);
-
-		// Set the QuadKey filter
-		if(opts_ptr->quadkFilter_enabled==true) {
-			recvClient.setFilter(quadKey_filter);
-		}
-
-		amqpclimutex.lock();
-		amqpclimap[clientIndex]=&recvClient;
-		amqpclimutex.unlock();
-
-		proton::container(recvClient).run();
-	} catch (const std::exception& e) {
-		amqpclimutex.lock();
-		amqpclimap.erase(clientIndex);
-		amqpclimutex.unlock();
-
-		std::cerr << "[AMQPClient "<< clientID << "] Exception occurred: " << e.what() << std::endl;
-		terminatorFlag = true;
-
-		main_amqp_ptr->force_container_stop();
+	if(opts_ptr->amqp_broker_x[clientIndex].amqp_reconnect_after_local_timeout_expired==true) {
+		std::cout << "[AMQPClient "<< clientID << "] This client will be restarted if a local idle timeout error occurs." << std::endl;
 	}
+
+	AMQPClient recvClient(std::string(options_string_pop(opts_ptr->amqp_broker_x[clientIndex].broker_url)), std::string(options_string_pop(opts_ptr->amqp_broker_x[clientIndex].broker_topic)), opts_ptr->min_lat,opts_ptr->max_lat, opts_ptr->min_lon, opts_ptr->max_lon, opts_ptr, db_ptr, logfile_name);
+
+	// If this flag is set to true, the client will be restarted after an error, instead of being terminated
+	bool cli_restart = false;
+
+	do {
+		cli_restart = false;
+
+		try {
+			// The indicator trigger manager is disabled by default in AMQPClient, unless it is explicitely enabled with a call to setIndicatorTriggerManager(true)
+			if(opts_ptr->indicatorTrgMan_enabled==true) {
+				recvClient.setIndicatorTriggerManager(itm_ptr);
+			}
+
+			// Set username, if specified
+			if(options_string_len(opts_ptr->amqp_broker_x[clientIndex].amqp_username)>0) {
+				recvClient.setUsername(std::string(options_string_pop(opts_ptr->amqp_broker_x[clientIndex].amqp_username)));
+			}
+
+			// Set password, if specified
+			if(options_string_len(opts_ptr->amqp_broker_x[clientIndex].amqp_password)>0) {
+				recvClient.setPassword(std::string(options_string_pop(opts_ptr->amqp_broker_x[clientIndex].amqp_password)));
+			}
+
+			// Set connection options (they all default to "false" - see also options.c/broker_options_inizialize())
+			recvClient.setConnectionOptions(opts_ptr->amqp_broker_x[clientIndex].amqp_allow_sasl,opts_ptr->amqp_broker_x[clientIndex].amqp_allow_insecure,opts_ptr->amqp_broker_x[clientIndex].amqp_reconnect);
+			recvClient.setIdleTimeout(opts_ptr->amqp_broker_x[clientIndex].amqp_idle_timeout);
+
+			recvClient.setClientID(clientID);
+
+			// Set the QuadKey filter
+			if(opts_ptr->quadkFilter_enabled==true) {
+				recvClient.setFilter(quadKey_filter);
+			}
+
+			amqpclimutex.lock();
+			amqpclimap[clientIndex]=&recvClient;
+			amqpclimutex.unlock();
+
+			proton::container(recvClient).run();
+		} catch (const std::exception& e) {
+			if(opts_ptr->amqp_broker_x[clientIndex].amqp_reconnect_after_local_timeout_expired==true && std::string(e.what()) == "amqp:resource-limit-exceeded: local-idle-timeout expired") {
+				std::cerr << "[AMQPClient "<< clientID << "] Exception occurred: " << e.what() << std::endl;
+				std::cout << "[AMQPClient "<< clientID << "] Attempting to restart the client after a local idle timeout expired error..." << std::endl;
+				recvClient.force_container_stop();
+				sleep(1);
+				cli_restart = true;
+			} else {
+				amqpclimutex.lock();
+				amqpclimap.erase(clientIndex);
+				amqpclimutex.unlock();
+
+				std::cerr << "[AMQPClient "<< clientID << "] Exception occurred: " << e.what() << std::endl;
+				terminatorFlag = true;
+
+				main_amqp_ptr->force_container_stop();
+			}
+		}
+	} while(cli_restart==true);
 
 	return;
 }
@@ -482,38 +502,58 @@ int main(int argc, char **argv) {
 		}
 	}
 
-	// Start the AMQP client event loop (main client)
-	try {
-		// The indicator trigger manager is disabled by default in AMQPClient, unless it is explicitely enabled with a call to setIndicatorTriggerManager(true)
-		if(sldm_opts.indicatorTrgMan_enabled==true) {
-			mainRecvClient.setIndicatorTriggerManager(&itm);
-		}
-
-		// Set username, if specified
-		if(options_string_len(sldm_opts.amqp_broker_one.amqp_username)>0) {
-			mainRecvClient.setUsername(std::string(options_string_pop(sldm_opts.amqp_broker_one.amqp_username)));
-		}
-
-		// Set password, if specified
-		if(options_string_len(sldm_opts.amqp_broker_one.amqp_password)>0) {
-			mainRecvClient.setPassword(std::string(options_string_pop(sldm_opts.amqp_broker_one.amqp_password)));
-		}
-
-		// Set connection options (they all default to "false" - see also options.c/broker_options_inizialize())
-		mainRecvClient.setConnectionOptions(sldm_opts.amqp_broker_one.amqp_allow_sasl,sldm_opts.amqp_broker_one.amqp_allow_insecure,sldm_opts.amqp_broker_one.amqp_reconnect);
-		
-		mainRecvClient.setClientID("1");
-
-		// Set the QuadKey filter
-		if(sldm_opts.quadkFilter_enabled==true) {
-			mainRecvClient.setFilter(filter_str);
-		}
-
-		proton::container(mainRecvClient).run();
-	} catch (const std::exception& e) {
-		std::cerr << e.what() << std::endl;
-		terminatorFlag = true;
+	if(sldm_opts.amqp_broker_one.amqp_reconnect_after_local_timeout_expired==true) {
+		std::cout << "[AMQPClient 1] This client will be restarted if a local idle timeout error occurs." << std::endl;
 	}
+
+	// If this flag is set to true, the client will be restarted after an error, instead of being terminated
+	bool cli_restart = false;
+
+	do {
+		cli_restart = false;
+
+		// Start the AMQP client event loop (main client)
+		try {
+			// The indicator trigger manager is disabled by default in AMQPClient, unless it is explicitely enabled with a call to setIndicatorTriggerManager(true)
+			if(sldm_opts.indicatorTrgMan_enabled==true) {
+				mainRecvClient.setIndicatorTriggerManager(&itm);
+			}
+
+			// Set username, if specified
+			if(options_string_len(sldm_opts.amqp_broker_one.amqp_username)>0) {
+				mainRecvClient.setUsername(std::string(options_string_pop(sldm_opts.amqp_broker_one.amqp_username)));
+			}
+
+			// Set password, if specified
+			if(options_string_len(sldm_opts.amqp_broker_one.amqp_password)>0) {
+				mainRecvClient.setPassword(std::string(options_string_pop(sldm_opts.amqp_broker_one.amqp_password)));
+			}
+
+			// Set connection options (they all default to "false" - see also options.c/broker_options_inizialize())
+			mainRecvClient.setConnectionOptions(sldm_opts.amqp_broker_one.amqp_allow_sasl,sldm_opts.amqp_broker_one.amqp_allow_insecure,sldm_opts.amqp_broker_one.amqp_reconnect);
+			mainRecvClient.setIdleTimeout(sldm_opts.amqp_broker_one.amqp_idle_timeout);
+
+			mainRecvClient.setClientID("1");
+
+			// Set the QuadKey filter
+			if(sldm_opts.quadkFilter_enabled==true) {
+				mainRecvClient.setFilter(filter_str);
+			}
+
+			proton::container(mainRecvClient).run();
+		} catch (const std::exception& e) {
+			if(sldm_opts.amqp_broker_one.amqp_reconnect_after_local_timeout_expired==true && std::string(e.what()) == "amqp:resource-limit-exceeded: local-idle-timeout expired") {
+				std::cerr << "[AMQPClient 1] Exception occurred: " << e.what() << std::endl;
+				std::cout << "[AMQPClient 1] Attempting to restart the client after a local idle timeout expired error..." << std::endl;
+				mainRecvClient.force_container_stop();
+				sleep(1);
+				cli_restart = true;
+			} else {
+				std::cerr << e.what() << std::endl;
+				terminatorFlag = true;
+			}
+		}
+	} while(cli_restart==true);
 
 	pthread_join(dbcleaner_tid,nullptr);
 	pthread_join(vehviz_tid,nullptr);

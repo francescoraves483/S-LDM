@@ -80,6 +80,7 @@ clean:
 	-rm -rf $(OBJ_OPTIONS_DIR)
 	-rm -rf $(OBJ_DECODER_DIR)
 	-rm -rf $(OBJ_ASN1_DIR)
+	-rm -f cachefile.sldmc
 	
 fullclean: clean
 	$(RM) $(EXECNAME)

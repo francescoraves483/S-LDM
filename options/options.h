@@ -44,7 +44,9 @@
 	CFG(amqp_allow_sasl,bool) \
 	CFG(amqp_allow_insecure,bool) \
 	CFG(broker_url,options_string) \
-	CFG(broker_topic,options_string)
+	CFG(broker_topic,options_string) \
+	CFG(amqp_idle_timeout,long) \
+	CFG(amqp_reconnect_after_local_timeout_expired,bool)
 
 // The bool type is set to "_Bool" because "_Bool" is actually the true type name inside stdbool.h ("bool" is just an alias)
 // This macro is used to automatically define several functions (used in options.c) to fill in the different fields of each
@@ -86,6 +88,13 @@ static inline bool fill_AMQPClient_options_array_##name(char * optarg, int num_c
 	 				fprintf(stderr,"Error in parsing the AMQP client option: %s. %.15s is not a valid boolean value (true,false,default). Client: %d.\n",#name,str_ptr,i); \
 	 				return false; \
 	 			} \
+	 		} else if(strcmp(#type,"long")==0) { \
+	 			char *sPtr; \
+	 			errno=0;\
+				*((long *)&(broker_opts[i].name))=strtol(optarg,&sPtr,10); \
+				if(sPtr==optarg || errno) { \
+					fprintf(stderr,"Error in parsing the AMQP client option: %s. Client: %d.\n",#name,i); \
+				} \
 	 		} else { \
 	 			return false; \
 	 		} \
@@ -101,7 +110,7 @@ static inline bool fill_AMQPClient_options_array_##name(char * optarg, int num_c
 }
 
 // Insert here the version string
-#define VERSION_STR "S-LDM 1.0.3-beta" // 1.0.0 -> first (initial) cross-border version
+#define VERSION_STR "S-LDM 1.0.9-beta" // 1.0.0 -> first (initial) cross-border version
 
 #define DEFAULT_BROKER_URL "127.0.0.1:5672"
 #define DEFAULT_BROKER_QUEUE "topic://5gcarmen.examples"

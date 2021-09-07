@@ -47,6 +47,7 @@ class AMQPClient : public proton::messaging_handler {
 		bool m_reconnect;
 		bool m_allow_sasl;
 		bool m_allow_insecure;
+		long m_idle_timeout_ms;
 
 		std::string m_client_id;
 
@@ -65,6 +66,7 @@ class AMQPClient : public proton::messaging_handler {
 			m_allow_insecure=false;
 			m_client_id="unset";
 			m_cont=nullptr;
+			m_idle_timeout_ms=-1;
 		}
 
 		AMQPClient(const std::string &u,const std::string &a,const double &latmin,const double &latmax,const double &lonmin, const double &lonmax, struct options *opts_ptr, ldmmap::LDMMap *db_ptr) :
@@ -79,6 +81,7 @@ class AMQPClient : public proton::messaging_handler {
 			m_allow_insecure=false;
 			m_client_id="unset";
 			m_cont=nullptr;
+			m_idle_timeout_ms=-1;
 		}
 
 		void setIndicatorTriggerManager(indicatorTriggerManager *indicatorTrgMan_ptr) {
@@ -106,6 +109,10 @@ class AMQPClient : public proton::messaging_handler {
 			m_allow_sasl=allow_sasl;
 			m_allow_insecure=allow_insecure;
 			m_reconnect=reconnect;
+		}
+
+		void setIdleTimeout(long idle_timeout_ms) {
+			m_idle_timeout_ms=idle_timeout_ms;
 		}
 
 		void setClientID(std::string id) {

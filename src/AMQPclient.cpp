@@ -96,6 +96,22 @@ AMQPClient::on_container_start(proton::container &c) {
 		std::cout<<"[AMQPClient " << m_client_id.c_str() << "] Warning: clear-text passwords are enabled."<<std::endl;
 	}
 
+	if(m_idle_timeout_ms>=0) {
+		if(m_idle_timeout_ms==0) {
+			co.idle_timeout(proton::duration::FOREVER);
+
+			std::cout<<"[AMQPClient " << m_client_id.c_str() << "] Idle timeout set to FOREVER."<<std::endl;
+		} else {
+			co.idle_timeout(proton::duration(m_idle_timeout_ms));
+
+			std::cout<<"[AMQPClient " << m_client_id.c_str() << "] Idle timeout set to "<<m_idle_timeout_ms<<"."<<std::endl;
+		}
+
+		co_set = true;
+	} else {
+		std::cout<<"[AMQPClient " << m_client_id.c_str() << "] No idle timeout has been explicitely set."<<std::endl;
+	}
+
 	if(m_logfile_name!="") {
 		if(m_logfile_name=="stdout") {
 			m_logfile_file=stdout;

@@ -43,10 +43,14 @@
 #define LONGOPT_vehviz_update_interval_sec "vehviz-update-interval"
 #define LONGOPT_indicator_trgman_disable "indicator-trgman-disable"
 #define LONGOPT_disable_quadkey_filter "disable-quadkey-filter"
+#define LONGOPT_amqp_main_idle_timeout "amqp-main-idle-timeout"
+#define LONGOPT_amqp_main_reconn_local_timeout_exp "amqp-main-reconn-local-timeout-exp"
 // The corresponding "val"s are used internally and they should be set as sequential integers starting from 256 (the range 320-399 should not be used as it is reserved to the AMQP broker long options)
 #define LONGOPT_vehviz_update_interval_sec_val 256
 #define LONGOPT_indicator_trgman_disable_val 257
 #define LONGOPT_disable_quadkey_filter_val 258
+#define LONGOPT_amqp_main_idle_timeout_val 259
+#define LONGOPT_amqp_main_reconn_local_timeout_exp_val 260
 
 // AMQP broker (additional)
 #define LONGOPT_amqp_enable_additionals "amqp-enable-additionals"
@@ -57,6 +61,8 @@
 #define LONGOPT_amqp_additionals_reconnect "amqp-additionals-reconnect"
 #define LONGOPT_amqp_additionals_allow_sasl "amqp-additionals-allow-sasl"
 #define LONGOPT_amqp_additionals_allow_plain "amqp-additionals-allow-plain"
+#define LONGOPT_amqp_additionals_idle_timeout "amqp-additionals-idle-timeout"
+#define LONGOPT_amqp_additionals_reconn_local_timeout_exp "amqp-additionals-reconn-local-timeout-exp"
 #define LONGOPT_amqp_enable_additionals_val 320
 #define LONGOPT_amqp_additionals_url_val 321
 #define LONGOPT_amqp_additionals_queue_val 322
@@ -65,6 +71,8 @@
 #define LONGOPT_amqp_additionals_reconnect_val 325
 #define LONGOPT_amqp_additionals_allow_sasl_val 326
 #define LONGOPT_amqp_additionals_allow_plain_val 327
+#define LONGOPT_amqp_additionals_idle_timeout_val 328
+#define LONGOPT_amqp_additionals_reconn_local_timeout_exp_val 329
 
 
 #define LONGOPT_STR_CONSTRUCTOR(LONGOPT_STR) "  --"LONGOPT_STR"\n"
@@ -96,19 +104,23 @@ static const struct option long_opts[]={
 	{LONGOPT_C,				required_argument,	NULL, 'C'},
 	{LONGOPT_g,				no_argument,		NULL, 'g'},
 
-	{LONGOPT_vehviz_update_interval_sec,	required_argument,	NULL, LONGOPT_vehviz_update_interval_sec_val},
-	{LONGOPT_indicator_trgman_disable,		no_argument,		NULL, LONGOPT_indicator_trgman_disable_val},
-	{LONGOPT_disable_quadkey_filter,		no_argument,		NULL, LONGOPT_disable_quadkey_filter_val},
+	{LONGOPT_vehviz_update_interval_sec,			required_argument,	NULL, LONGOPT_vehviz_update_interval_sec_val},
+	{LONGOPT_indicator_trgman_disable,				no_argument,		NULL, LONGOPT_indicator_trgman_disable_val},
+	{LONGOPT_disable_quadkey_filter,				no_argument,		NULL, LONGOPT_disable_quadkey_filter_val},
+	{LONGOPT_amqp_main_idle_timeout,				required_argument,	NULL, LONGOPT_amqp_main_idle_timeout_val},
+	{LONGOPT_amqp_main_reconn_local_timeout_exp,	no_argument,		NULL, LONGOPT_amqp_main_reconn_local_timeout_exp_val},
 
 	// Additional AMQP clients options
-	{LONGOPT_amqp_enable_additionals,		required_argument,		NULL, LONGOPT_amqp_enable_additionals_val},
-	{LONGOPT_amqp_additionals_url,			required_argument,		NULL, LONGOPT_amqp_additionals_url_val},
-	{LONGOPT_amqp_additionals_queue,		required_argument,		NULL, LONGOPT_amqp_additionals_queue_val},
-	{LONGOPT_amqp_additionals_username,		required_argument,		NULL, LONGOPT_amqp_additionals_username_val},
-	{LONGOPT_amqp_additionals_password,		required_argument,		NULL, LONGOPT_amqp_additionals_password_val},
-	{LONGOPT_amqp_additionals_reconnect,	required_argument,		NULL, LONGOPT_amqp_additionals_reconnect_val},
-	{LONGOPT_amqp_additionals_allow_sasl,	required_argument,		NULL, LONGOPT_amqp_additionals_allow_sasl_val},
-	{LONGOPT_amqp_additionals_allow_plain,	required_argument,		NULL, LONGOPT_amqp_additionals_allow_plain_val},
+	{LONGOPT_amqp_enable_additionals,					required_argument,		NULL, LONGOPT_amqp_enable_additionals_val},
+	{LONGOPT_amqp_additionals_url,						required_argument,		NULL, LONGOPT_amqp_additionals_url_val},
+	{LONGOPT_amqp_additionals_queue,					required_argument,		NULL, LONGOPT_amqp_additionals_queue_val},
+	{LONGOPT_amqp_additionals_username,					required_argument,		NULL, LONGOPT_amqp_additionals_username_val},
+	{LONGOPT_amqp_additionals_password,					required_argument,		NULL, LONGOPT_amqp_additionals_password_val},
+	{LONGOPT_amqp_additionals_reconnect,				required_argument,		NULL, LONGOPT_amqp_additionals_reconnect_val},
+	{LONGOPT_amqp_additionals_allow_sasl,				required_argument,		NULL, LONGOPT_amqp_additionals_allow_sasl_val},
+	{LONGOPT_amqp_additionals_allow_plain,				required_argument,		NULL, LONGOPT_amqp_additionals_allow_plain_val},
+	{LONGOPT_amqp_additionals_idle_timeout,				required_argument,		NULL, LONGOPT_amqp_additionals_idle_timeout_val},
+	{LONGOPT_amqp_additionals_reconn_local_timeout_exp,	required_argument,		NULL, LONGOPT_amqp_additionals_reconn_local_timeout_exp_val},
 
 	{NULL, 0, NULL, 0}
 };
@@ -199,6 +211,26 @@ static const struct option long_opts[]={
 	"\t  When this option is not specified, GeoNetworking timestamps are used to understand if the\n" \
 	"\t  received data is up-to-date and should be saved to the database or not.\n"
 
+#define OPT_u_description \
+	LONGOPT_STR_CONSTRUCTOR(LONGOPT_u) \
+	"  -u <username>: set the username (if required) for the main AMQP client.\n"
+
+#define OPT_p_description \
+	LONGOPT_STR_CONSTRUCTOR(LONGOPT_p) \
+	"  -p <password>: set the password (if required) for the main AMQP client.\n"
+
+#define OPT_R_description \
+	LONGOPT_STR_CONSTRUCTOR(LONGOPT_R) \
+	"  -R: enable the automatic reconnection, after a connection loss, for the main AMQP client.\n"
+
+#define OPT_S_description \
+	LONGOPT_STR_CONSTRUCTOR(LONGOPT_S) \
+	"  -S: enable the SASL authentication for the main AMQP client.\n"
+
+#define OPT_I_description \
+	LONGOPT_STR_CONSTRUCTOR(LONGOPT_I) \
+	"  -I: enable the PLAIN authentication for the main AMQP client.\n"
+
 #define OPT_vehviz_update_interval_sec_description \
 	"  --"LONGOPT_vehviz_update_interval_sec" <interval in seconds>: advanced option: this option can be used to\n" \
 	"\t  modify the update rate of the web-based GUI. \n" \
@@ -217,6 +249,17 @@ static const struct option long_opts[]={
 	"\t  case, you can use this option to enable the reception of all the messages without the aforementioned property.\n" \
 	"\t  However, using this option may affect the overall performance of the S-LDM.\n"
 
+#define OPT_amqp_main_idle_timeout \
+	"  --"LONGOPT_amqp_main_idle_timeout": set the main AMQP broker idle timout value (any value < 0 means that the default\n" \
+	"\t  Qpid Proton settings are used, i.e., the idle timeout is not explicitely set). Setting this to 0 will disable the\n" \
+	"\t  the idle timeout (i.e., set it to FOREVER).\n"
+
+#define OPT_amqp_main_reconn_local_timeout_exp \
+	"  --"LONGOPT_amqp_main_reconn_local_timeout_exp": enable the automatic reconnection to the AMQP broker after a local\n" \
+	"\t  idle timeout error occurs (amqp:resource-limit-exceeded: local-idle-timeout expired).\n" \
+	"\t  Setting this option may help solving some issues with certain AMQP broker which seems to randomly cause this\n" \
+	"\t  error (default: not enabled - i.e., no automatic reconnection occurs).\n"
+
 #define OPT_brokers_enable_description \
 	"  --"LONGOPT_amqp_enable_additionals" <number of additional clients>: this option can be used to enable the subscription to additional brokers,\n" \
 	"\t  other than the main one. Up to 9 additional AMQP clients can be used, for the time being.\n" \
@@ -228,6 +271,8 @@ static const struct option long_opts[]={
 	"\t  "LONGOPT_STR_CONSTRUCTOR(LONGOPT_amqp_additionals_reconnect) "" \
 	"\t  "LONGOPT_STR_CONSTRUCTOR(LONGOPT_amqp_additionals_allow_sasl) "" \
 	"\t  "LONGOPT_STR_CONSTRUCTOR(LONGOPT_amqp_additionals_allow_plain) "" \
+	"\t  "LONGOPT_STR_CONSTRUCTOR(LONGOPT_amqp_additionals_idle_timeout) "" \
+	"\t  "LONGOPT_STR_CONSTRUCTOR(LONGOPT_amqp_additionals_reconn_local_timeout_exp) "" \
 	"\t  All these options work just like the corresponding ones for the main AMQP client, but they all accept a comma-separated\n" \
 	"\t  list, where each entry corresponds, respectively, to the first client, then to the second, then to the third, and\n" \
 	"\t  so on. The number of elements in each list should be equal to <number of additional clients>.\n" \
@@ -258,9 +303,16 @@ static void print_long_info(char *argv0) {
 		OPT_L_description
 		OPT_C_description
 		OPT_g_description
+		OPT_u_description
+		OPT_p_description
+		OPT_R_description
+		OPT_S_description
+		OPT_I_description
 		OPT_vehviz_update_interval_sec_description
 		OPT_indicator_trgman_disable_description
 		OPT_disable_quadkey_filter_description
+		OPT_amqp_main_idle_timeout
+		OPT_amqp_main_reconn_local_timeout_exp
 		OPT_brokers_enable_description
 		,
 		argv0,argv0,argv0);
@@ -289,6 +341,9 @@ static void broker_options_inizialize(broker_options_t *broker_options) {
 
 	broker_options->broker_url=options_string_declare();
 	broker_options->broker_topic=options_string_declare();
+
+	broker_options->amqp_idle_timeout=-1; // Disabled by default
+	broker_options->amqp_reconnect_after_local_timeout_expired=false;
 }
 
 static void broker_options_free(broker_options_t *broker_options) {
@@ -547,12 +602,30 @@ unsigned int parse_options(int argc, char **argv, struct options *options) {
 				}
 				break;
 
+			case LONGOPT_amqp_main_idle_timeout_val:
+				errno=0; // Setting errno to 0 as suggested in the strtod() man page
+				options->amqp_broker_one.amqp_idle_timeout=strtol(optarg,&sPtr,10);
+
+				if(sPtr==optarg) {
+					fprintf(stderr,"Cannot find any digit in the specified value (--" LONGOPT_vehviz_update_interval_sec ").\n");
+					print_short_info_err(options,argv[0]);
+				} else if(errno) {
+					fprintf(stderr,"Error in parsing the main AMQP client idle timeout value. Probably a wrong format has been specified.\n");
+					print_short_info_err(options,argv[0]);
+				}
+
+				break;
+
 			case LONGOPT_indicator_trgman_disable_val:
 				options->indicatorTrgMan_enabled=false;
 				break;
 
 			case LONGOPT_disable_quadkey_filter_val:
 				options->quadkFilter_enabled=false;
+				break;
+
+			case LONGOPT_amqp_main_reconn_local_timeout_exp_val:
+				options->amqp_broker_one.amqp_reconnect_after_local_timeout_expired=true;
 				break;
 
 			// Additional AMQP clients options
@@ -669,6 +742,30 @@ unsigned int parse_options(int argc, char **argv, struct options *options) {
 					print_short_info_err(options,argv[0]);
 				}
 
+				break;
+
+			case LONGOPT_amqp_additionals_idle_timeout_val:
+				if(options->num_amqp_x_enabled<=0) {
+					fprintf(stderr,"Error: attempting to configure additional AMQP clients before enabling them.\nYou must specify --" LONGOPT_amqp_enable_additionals " before attempting to configure any other additional AMQP client option.\n");
+					print_short_info_err(options,argv[0]);
+				}
+
+				if(fill_AMQPClient_options_array_amqp_idle_timeout(optarg,options->num_amqp_x_enabled,options->amqp_broker_x)!=true) {
+					fprintf(stderr,"Error in parsing the additional AMQP broker(s) idle timeout options. Please check if enough arguments are specified in the comma-separated list.\n");
+					print_short_info_err(options,argv[0]);
+				}
+				break;
+
+			case LONGOPT_amqp_additionals_reconn_local_timeout_exp_val:
+				if(options->num_amqp_x_enabled<=0) {
+					fprintf(stderr,"Error: attempting to configure additional AMQP clients before enabling them.\nYou must specify --" LONGOPT_amqp_enable_additionals " before attempting to configure any other additional AMQP client option.\n");
+					print_short_info_err(options,argv[0]);
+				}
+
+				if(fill_AMQPClient_options_array_amqp_reconnect_after_local_timeout_expired(optarg,options->num_amqp_x_enabled,options->amqp_broker_x)!=true) {
+					fprintf(stderr,"Error in parsing the additional AMQP broker(s) reconnect after local idle timeout options. Please check if enough arguments are specified in the comma-separated list.\n");
+					print_short_info_err(options,argv[0]);
+				}
 				break;
 			// ----------------------------------
 
