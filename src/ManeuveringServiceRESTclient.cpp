@@ -31,7 +31,7 @@ void *RESTthread_callback (void *arg) {
 	http::status_code status_code_ret;
 	http::reason_phrase reason_phrase_ret;
 
-	// Send 1 request every timems milliseconds until the server sends a reply containing the STOP in the JSON field "rsp_type"
+	// Send 1 request every <REST Client periodic interval [s] - default: 1 s>*1000000.0 microseconds until the server sends a reply containing the STOP in the JSON field "rsp_type"
 	timer_fd_create(pollfddata, clockFd, restObj->getPeriodicInterval()*1000000.0);
 
 	POLL_DEFINE_JUNK_VARIABLE();
@@ -105,7 +105,7 @@ web::json::value ManeuveringServiceRestClient::make_SLDM_json(int eventID) {
 	// "now" timestamp (i.e., the timestamp at which this POST request is being generated: "generation_tstamp")
 	uint64_t now_us = get_timestamp_us();
 
-	sldm_json["generation_tstamp"] = web::json::value::number(now_us);
+	sldm_json["generation_tstamp"] = MAKE_NUM(now_us);
 	sldm_json["eventID"] = MAKE_NUM(eventID);
 	sldm_json["event"] = MAKE_STR("CLC");
 	sldm_json["reference_vehicle_ID"] = MAKE_NUM(m_refVehStationID);
@@ -184,6 +184,8 @@ web::json::value ManeuveringServiceRestClient::make_vehicle(uint64_t stationID,
 	vehicle["relative_dist_to_reference_m"] = MAKE_NUM(relative_dist_m);
 	vehicle["sourceQuadkey"] = MAKE_STR(src_quadk);
 	vehicle["stationType"] = MAKE_NUM(stationType);
+
+	// This value represents the difference between when the database is being read for this vehicle (i.e., now) and when the data for that vehicle was last stored
 	vehicle["time_since_generation_tstamp"] = MAKE_NUM(diff_ref_tstamp);
 
 	if(car_length_mm.isAvailable()) {

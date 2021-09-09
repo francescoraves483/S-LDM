@@ -44,7 +44,6 @@ namespace ldmmap {
 
 			PHpoints_retval_t insert(vehicleData_t newVehicleData);
 			PHpoints_retval_t iterate(PHDataIter_t &PHDataIter, PHData_t *nextPHData);
-			PHpoints_retval_t iterateFull(PHDataIter_t &PHDataIter, PHData_t *nextPHData);
 			void clear(void);
 
 			// These are the only two parameters which can be set after construcing a PHpoints objects, as it reserves

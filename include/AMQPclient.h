@@ -130,7 +130,7 @@ class AMQPClient : public proton::messaging_handler {
 		void on_connection_close(proton::connection &conn) override;
 
 		// This function can be used to force the termination of the event loop of the current client from outside the AMQPClient object
-		// "m_conn" is an atomic pointer to the proton::container which is set as soon as on_container_start() is called
+		// "m_cont" is an atomic pointer to the proton::container which is set as soon as on_container_start() is called
 		void force_container_stop() {
 			if(m_cont!=nullptr) {
 				m_cont.load()->stop();
