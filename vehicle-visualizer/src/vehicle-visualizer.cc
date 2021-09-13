@@ -264,7 +264,7 @@ vehicleVisualizer::startServer()
 
 	// If the result is 0, system() was able to successfully launch the command (which may fail afterwards, though)
 	if (startCmdRval == 0) {
-		std::cout<<"Used the following command to start up the vehicle visualizer Node.js server: " << std::endl;
+		std::cout<<"Used the following command to start up the vehicle visualizer Node.js server: " << servercmd << std::endl;
 		m_is_server_active = true;
 	} else {
 		std::cerr << "Cannot send the command for starting the Node.js server." << std::endl;
