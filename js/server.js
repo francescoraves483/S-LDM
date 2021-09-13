@@ -29,12 +29,13 @@ fs.readFile(filepath, 'utf8', function (err,data) {
 // Read the server port as a command line option
 var server_argv = process.argv.slice(2);
 
-if(server_argv.length!=3) {
-    console.error("VehicleVisualizer: Error. Three arguments are expected and " + server_argv.length.toString() + " were specified.");
+if(server_argv.length!=4) {
+    console.error("VehicleVisualizer: Error. Four arguments are expected and " + server_argv.length.toString() + " were specified.");
     process.exit(1);
 } else {
     console.log("VehicleVisualizer: HTTP server listening on port: " + server_argv[0]);
     console.log("VehicleVisualizer: UDP socket bound at: " + server_argv[1] + ":" +  server_argv[2]);
+    console.log("VehicleVisualizer: PID of the S-LDM: " + server_argv[3])
 }
 
 // Create a new HTTP server with express.static
@@ -61,6 +62,9 @@ udpSocket.on('listening', () => {
     var bindaddr = address.address;
     var bindport = address.port;
     console.log('VehicleVisualizer: UDP connection ready at %s:%s',bindaddr,bindport);
+
+    // Inform the S-LDM that the node.js server execution was successful, by writing to the proper FIFO special file
+    fs.appendFileSync('/tmp/vehvizfifo' + server_argv[3],'STARTED');
 });
 
 // map draw message container -> this variable will contain a copy of the "map draw" message received by the S-LDM at the beginning

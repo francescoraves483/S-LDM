@@ -30,6 +30,7 @@ class vehicleVisualizer
 
 		// This function must be called just after creating a new vehicleVisualizer object
 		// It will start a Node.js server receiving data from ms-van3t via UDP and making a web GUI available to the user on loopback, port "m_httpport"
+		// This function will return only when the Node.js server is ready
 		int startServer();
 
 		// This function must be called after calling startServer()

@@ -5,6 +5,9 @@
 #include <unistd.h>
 #include <iostream>
 #include <sstream>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 #include "vehicle-visualizer.h"
 
 vehicleVisualizer::vehicleVisualizer()
@@ -215,6 +218,36 @@ vehicleVisualizer::startServer()
 {
 	std::string servercmd;
 
+	// Create a FIFO special file (see https://linux.die.net/man/3/mkfifo) for the "startup communication"
+	// between the S-LDM and the node.js server we are going to start
+	// Basically this file will be used as a pipe to tell the S-LDM when the node.js server UDP socket
+	// creation is complete, so that the S-LDM can start sending information to the server
+	// The special FIFO file will be named "vehvizfifo<PID of this S-LDM instance>"
+	std::string fifofile = "/tmp/vehvizfifo" + std::to_string(getpid());
+	int fifofd=-1;
+
+	// Print an error and exit if mkfifo() failed due to any reason different than an already existing file (errno==EEXIST)
+	// If the FIFO special file already exists, for any reason, we should be able to simply re-use it
+	if(mkfifo(fifofile.c_str(), 0660) < 0) {
+		if(errno!=EEXIST) {
+			std::cerr << "Cannot start the Node.js server. mkfifo() communication pipe creation error." << std::endl;
+			perror("Error details:");
+			exit(EXIT_FAILURE);
+		}
+	} else {
+		std::cout << "VehicleVisualizer startup: using temporary FIFO special file: " << fifofile << std::endl;
+	}
+
+	// Open the FIFO file (O_RDWR is needed, instead of O_RDONLY, to avoid blocking on this open() due to the absence of a writer.
+	// Indeed, the writer will be the node.js server, which hasn't started yet)
+	fifofd = open(fifofile.c_str(),O_RDWR);
+
+	if(fifofd < 0) {
+		std::cerr << "Cannot start the Node.js server. mkfifo() communication pipe error." << std::endl;
+		exit(EXIT_FAILURE);
+	}
+
+	// Start the node.js server managing the web-based vehicle visualizer S-LDM GUI
 	int nodeCheckRval = std::system("command -v node > /dev/null");
 
 	if(nodeCheckRval != 0) {
@@ -224,8 +257,8 @@ vehicleVisualizer::startServer()
 
 	// servercmd = "node " + m_serverpath + " " + std::to_string(m_httpport) + " &";
 
-	// Command line parameters: HTTP web interface port, UDP socket bind address, UDP socket port
-	servercmd = "node " + m_serverpath + " " + std::to_string(m_httpport) + " " + m_ip + " " + std::to_string(m_port) + " &";
+	// node.js server (server.js) command line parameters: HTTP web interface port, UDP socket bind address, UDP socket port, PID of this S-LDM instance
+	servercmd = "node " + m_serverpath + " " + std::to_string(m_httpport) + " " + m_ip + " " + std::to_string(m_port) + " " + std::to_string(getpid()) + " &";
 
 	int startCmdRval = std::system(servercmd.c_str());
 
@@ -238,8 +271,26 @@ vehicleVisualizer::startServer()
 		exit(EXIT_FAILURE);
 	}
 
-	// Wait 1 second for the server to come up
-	sleep(1);
+	std::cout << "VehicleVisualizer startup: Waiting for the VehicleVisualizer node.js server to come up..." << std::endl;
+
+	// Wait 1 second for the server to come up (no more needed since the FIFO special file mechanism is in place)
+	// sleep(1);
+
+	// Blocking read on the FIFO special file
+	// This read() will block until the node.js server writes a string on the same file, to signal that its internal UDP socket is ready to receive
+	// data from the S-LDM
+	// The expected string from the node.js server, which will be stored inside "buf", is "STARTED" (so, we need 7 characters + '\0')
+	char buf[8] = {0};
+	if(read(fifofd,buf,8)<=0) {
+		std::cout << "Error. It seems that the node.js server could not come up." << std::endl;
+	} else {
+		std::cout << "VehicleVisualizer node.js server succesfully started. Confirmation message content: " << std::string(buf) << std::endl;
+	}
+
+	// Close and delete (with unlink(), as there should be no other process referring to the same file) the FIFO special file which was used as 
+	// a "synchronization mean" between the S-LDM and the node.js server
+	close(fifofd);
+	unlink(fifofile.c_str());
 
 	return startCmdRval;
 }
