@@ -38,6 +38,7 @@ void
 AMQPClient::on_connection_open(proton::connection &conn) {
 	if(m_logfile_name!="" && m_logfile_file!=nullptr) {
 		fprintf(m_logfile_file,"[LOG - AMQPClient %s] Connection successfully established.\n",m_client_id.c_str());
+		fflush(m_logfile_file);
 	}
 }
 
@@ -45,6 +46,7 @@ void
 AMQPClient::on_connection_close(proton::connection &conn) {
 	if(m_logfile_name!="" && m_logfile_file!=nullptr) {
 		fprintf(m_logfile_file,"[LOG - AMQPClient %s] Connection closed.\n",m_client_id.c_str());
+		fflush(m_logfile_file);
 	}
 }
 

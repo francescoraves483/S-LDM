@@ -59,7 +59,8 @@ class ManeuveringServiceRestClient {
 			std::string &src_quadk,
 			double relative_dist_m,
 			ldmmap::e_StationTypeLDM stationType,
-			uint64_t diff_ref_tstamp
+			uint64_t diff_ref_tstamp,
+			double heading
 			);
 
 		const double m_range_m_default = 100.0;

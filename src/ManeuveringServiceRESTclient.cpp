@@ -146,7 +146,8 @@ web::json::value ManeuveringServiceRestClient::make_SLDM_json(int eventID) {
 			vehdata.vehData.sourceQuadkey,
 			refRelDist,
 			vehdata.vehData.stationType,
-			now_us-vehdata.vehData.timestamp_us);
+			now_us-vehdata.vehData.timestamp_us,
+			vehdata.vehData.heading);
 
 		idx++;
 	}
@@ -169,7 +170,8 @@ web::json::value ManeuveringServiceRestClient::make_vehicle(uint64_t stationID,
 	std::string &src_quadk,
 	double relative_dist_m,
 	ldmmap::e_StationTypeLDM stationType,
-	uint64_t diff_ref_tstamp
+	uint64_t diff_ref_tstamp,
+	double heading
 	) {
 
 	web::json::value vehicle;
@@ -184,6 +186,7 @@ web::json::value ManeuveringServiceRestClient::make_vehicle(uint64_t stationID,
 	vehicle["relative_dist_to_reference_m"] = MAKE_NUM(relative_dist_m);
 	vehicle["sourceQuadkey"] = MAKE_STR(src_quadk);
 	vehicle["stationType"] = MAKE_NUM(stationType);
+	vehicle["heading"] = MAKE_NUM(heading);
 
 	// This value represents the difference between when the database is being read for this vehicle (i.e., now) and when the data for that vehicle was last stored
 	vehicle["time_since_generation_tstamp"] = MAKE_NUM(diff_ref_tstamp);
