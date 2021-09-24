@@ -447,6 +447,10 @@ int main(int argc, char **argv) {
 	// Create an indicatorTriggerManager object (the same object will be then accessed by all the AMQP clients, when using more than one client)
 	indicatorTriggerManager itm(db_ptr,&sldm_opts);
 
+	if(sldm_opts.left_indicator_trg_enable==true) {
+		itm.setLeftTurnIndicatorEnable(true);
+	}
+
 	// Set up the AMQP QuadKey filter for the AMQP client(s) (if more clients are spawned, the filter should be the same for all of them)
 	// -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
 	QuadKeys::QuadKeyTS tilesys;

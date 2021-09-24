@@ -45,12 +45,16 @@
 #define LONGOPT_disable_quadkey_filter "disable-quadkey-filter"
 #define LONGOPT_amqp_main_idle_timeout "amqp-main-idle-timeout"
 #define LONGOPT_amqp_main_reconn_local_timeout_exp "amqp-main-reconn-local-timeout-exp"
+#define LONGOPT_enable_left_indicator_trigger "enable-left-indicator-trigger"
+#define LONGOPT_ms_rest_periodicity "ms-rest-periodicity"
 // The corresponding "val"s are used internally and they should be set as sequential integers starting from 256 (the range 320-399 should not be used as it is reserved to the AMQP broker long options)
 #define LONGOPT_vehviz_update_interval_sec_val 256
 #define LONGOPT_indicator_trgman_disable_val 257
 #define LONGOPT_disable_quadkey_filter_val 258
 #define LONGOPT_amqp_main_idle_timeout_val 259
 #define LONGOPT_amqp_main_reconn_local_timeout_exp_val 260
+#define LONGOPT_enable_left_indicator_trigger_val 261
+#define LONGOPT_ms_rest_periodicity_val 262
 
 // AMQP broker (additional)
 #define LONGOPT_amqp_enable_additionals "amqp-enable-additionals"
@@ -109,6 +113,8 @@ static const struct option long_opts[]={
 	{LONGOPT_disable_quadkey_filter,				no_argument,		NULL, LONGOPT_disable_quadkey_filter_val},
 	{LONGOPT_amqp_main_idle_timeout,				required_argument,	NULL, LONGOPT_amqp_main_idle_timeout_val},
 	{LONGOPT_amqp_main_reconn_local_timeout_exp,	no_argument,		NULL, LONGOPT_amqp_main_reconn_local_timeout_exp_val},
+	{LONGOPT_enable_left_indicator_trigger,			no_argument,		NULL, LONGOPT_enable_left_indicator_trigger_val},
+	{LONGOPT_ms_rest_periodicity,					required_argument,	NULL, LONGOPT_ms_rest_periodicity_val},
 
 	// Additional AMQP clients options
 	{LONGOPT_amqp_enable_additionals,					required_argument,		NULL, LONGOPT_amqp_enable_additionals_val},
@@ -121,6 +127,7 @@ static const struct option long_opts[]={
 	{LONGOPT_amqp_additionals_allow_plain,				required_argument,		NULL, LONGOPT_amqp_additionals_allow_plain_val},
 	{LONGOPT_amqp_additionals_idle_timeout,				required_argument,		NULL, LONGOPT_amqp_additionals_idle_timeout_val},
 	{LONGOPT_amqp_additionals_reconn_local_timeout_exp,	required_argument,		NULL, LONGOPT_amqp_additionals_reconn_local_timeout_exp_val},
+	
 
 	{NULL, 0, NULL, 0}
 };
@@ -283,6 +290,15 @@ static const struct option long_opts[]={
 	"\t  Example with just one additional AMQP client:\n" \
 	"\t  --amqp-enable-additionals 1 --amqp-additionals-url 127.0.0.1:5673 --amqp-additionals-queue topic://yourtopic.name\n"
 
+#define OPT_enable_left_indicator_trigger \
+	"  --"LONGOPT_enable_left_indicator_trigger": when this option is specified, the indicator trigger manager will trigger\n" \
+	"\t  the data transmission via REST even when the left turn indicator is turned on by a vehicle. By default, only the right\n" \
+	"\t  turn indicator is considered.\n"
+
+#define OPT_ms_rest_periodicity \
+	"  --"LONGOPT_ms_rest_periodicity " <value in seconds, can be floating point>: this option can be used to set the\n" \
+	"\t  periodicity at which the data is sent via REST interface when a triggering condition is detected (default: 1 s).\n"
+
 static void print_long_info(char *argv0) {
 	fprintf(stdout,"\nUsage: %s [-A S-LDM coverage internal area] [options]\n"
 		"%s [-h | --"LONGOPT_h"]: print help and show options\n"
@@ -311,6 +327,8 @@ static void print_long_info(char *argv0) {
 		OPT_vehviz_update_interval_sec_description
 		OPT_indicator_trgman_disable_description
 		OPT_disable_quadkey_filter_description
+		OPT_enable_left_indicator_trigger
+		OPT_ms_rest_periodicity
 		OPT_amqp_main_idle_timeout
 		OPT_amqp_main_reconn_local_timeout_exp
 		OPT_brokers_enable_description
@@ -386,6 +404,8 @@ void options_initialize(struct options *options) {
 
 	options->ms_rest_addr=options_string_declare();
 	options->ms_rest_port=DEFAULT_MANEUVERING_SERVICE_REST_SRV_PORT;
+	options->left_indicator_trg_enable=false; // Only the right turn indicator is considered, by default
+	options->ms_rest_periodicity=DEFAULT_MANEUVERING_SERVICE_REST_PERIODICITY;
 
 	options->vehviz_nodejs_addr=options_string_declare();
 	options->vehviz_nodejs_port=DEFAULT_VEHVIZ_NODEJS_UDP_PORT;
@@ -624,8 +644,25 @@ unsigned int parse_options(int argc, char **argv, struct options *options) {
 				options->quadkFilter_enabled=false;
 				break;
 
+			case LONGOPT_enable_left_indicator_trigger_val:
+				options->left_indicator_trg_enable=true;
+				break;
+
 			case LONGOPT_amqp_main_reconn_local_timeout_exp_val:
 				options->amqp_broker_one.amqp_reconnect_after_local_timeout_expired=true;
+				break;
+
+			case LONGOPT_ms_rest_periodicity_val:
+				errno=0; // Setting errno to 0 as suggested in the strtod() man page
+				options->ms_rest_periodicity=strtod(optarg,&sPtr);
+
+				if(sPtr==optarg) {
+					fprintf(stderr,"Cannot find any digit in the specified value (--" LONGOPT_ms_rest_periodicity ").\n");
+					print_short_info_err(options,argv[0]);
+				} else if(errno || options->ms_rest_periodicity<0.001 || options->ms_rest_periodicity>10.0) {
+					fprintf(stderr,"Error in parsing the periodicity for the REST data transmission. Remember that it must be within [0.001,10.0] seconds.\n");
+					print_short_info_err(options,argv[0]);
+				}
 				break;
 
 			// Additional AMQP clients options

@@ -10,8 +10,11 @@ bool indicatorTriggerManager::checkAndTrigger(double lat, double lon, uint64_t r
 
 	// 5 = 7 - 2 is used to check bit 2, i.e. if "leftTurnSignalOn" is set
 	// 4 = 7 - 3 is used to check bit 3, i.e. if "rightTurnSignalOn" is set
-	// if(exteriorLightsStatus & (1 << 5) || exteriorLightsStatus & (1 << 4)) {
-	if(exteriorLightsStatus & (1 << 4)) {
+	// The default logic is to always trigger when a right turn indicator is set
+	// Instead, we should trigger the transmission of REST data when a left turn indicator is set only if the m_left_indicator_enabled flag is set to true
+	// This flag is 'false' by default and it can be set to 'true' with setLeftTurnIndicatorEnable()
+	if(exteriorLightsStatus & (1 << 4) || (m_left_indicator_enabled==true && exteriorLightsStatus & (1 << 5))) {
+	// if(exteriorLightsStatus & (1 << 4)) {
 		// Avoid triggering multiple times for the same vehicle
 		m_already_triggered_mutex.lock();
 		if(std::find(m_already_triggered.begin(), m_already_triggered.end(), refVehStationID) == m_already_triggered.end()) {
@@ -27,6 +30,7 @@ bool indicatorTriggerManager::checkAndTrigger(double lat, double lon, uint64_t r
 
 			if(ms_restclient!=nullptr) {
 				ms_restclient->changeContextRange(m_opts_ptr->context_radius);
+				ms_restclient->setPeriodicInterval(m_opts_ptr->ms_rest_periodicity);
 				
 				ms_restclient->setNotifyFunction(std::bind(&indicatorTriggerManager::notifyOpTermination,this,std::placeholders::_1));
 				

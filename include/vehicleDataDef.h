@@ -52,7 +52,7 @@ namespace ldmmap {
 		double lat;
 		double lon;
 		double elevation;
-		double heading; // Angles must be specified between 180 and -180 degrees
+		double heading; // Heading between 0 and 360 degrees
 		double speed_ms;
 		uint64_t gnTimestamp;
 		long camTimestamp; // This is the CAM message GenerationDeltaTime

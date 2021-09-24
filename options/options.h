@@ -110,13 +110,14 @@ static inline bool fill_AMQPClient_options_array_##name(char * optarg, int num_c
 }
 
 // Insert here the version string
-#define VERSION_STR "S-LDM 1.0.15-beta" // 1.0.0 -> first (initial) cross-border version
+#define VERSION_STR "S-LDM 1.0.18-beta" // 1.0.0 -> first (initial) cross-border version
 
 #define DEFAULT_BROKER_URL "127.0.0.1:5672"
 #define DEFAULT_BROKER_QUEUE "topic://5gcarmen.examples"
 
 #define DEFAULT_MANEUVERING_SERVICE_REST_SRV_ADDR "http://localhost"
 #define DEFAULT_MANEUVERING_SERVICE_REST_SRV_PORT 8000
+#define DEFAULT_MANEUVERING_SERVICE_REST_PERIODICITY 1.0 // Specified in [s]
 
 #define DEFAULT_VEHVIZ_NODEJS_UDP_ADDR "127.0.0.1"
 #define DEFAULT_VEHVIZ_NODEJS_UDP_PORT 48110
@@ -165,6 +166,8 @@ typedef struct options {
 
 	options_string ms_rest_addr; // Maneuvering Service REST Server address (excluding the port number)
 	long ms_rest_port; // Maneuvering Service REST Server port
+	bool left_indicator_trg_enable; // When this option is set to 'true', the data transmission will be triggered also depending on the left turn indicator, other than considering the right one (which is the default behaviour when this option is 'false')
+	double ms_rest_periodicity; // Periodicity at which the REST data should be sent to other services (e.g., the Maneuvering Service)
 
 	options_string vehviz_nodejs_addr; // Advanced option: IPv4 address for the UDP connection to the Node.js server (excluding the port number)
 	long vehviz_nodejs_port; // Advanced option: port number for the UDP connection to the Node.js server
