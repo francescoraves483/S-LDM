@@ -334,6 +334,7 @@ AMQPClient::on_message(proton::delivery &d, proton::message &msg) {
 	}
 
 	// Decode the content of the message, using the decoder-module frontend class
+	// m_decodeFrontend.setPrintPacket(true); // <- uncomment to print the bytes of each received message. Should be used for debug only, and should be kept disabled when deploying the S-LDM.
 	if(m_decodeFrontend.decodeEtsi(message_bin_buf, message_bin.size (), decodedData)!=ETSI_DECODER_OK) {
 		std::cerr << "Error! Cannot decode ETSI packet!" << std::endl;
 		return;
@@ -346,7 +347,7 @@ AMQPClient::on_message(proton::delivery &d, proton::message &msg) {
 	}
 
 	// If a CAM has been received, it should be used to update the internal in-memory database
-	if(decodedData.type == etsiDecoder::ETSI_DECODED_CAM) {
+	if(decodedData.type == etsiDecoder::ETSI_DECODED_CAM || decodedData.type == etsiDecoder::ETSI_DECODED_CAM_NOGN) {
 		CAM_t *decoded_cam = (CAM_t *) decodedData.decoded_msg;
 		double lat = decoded_cam->cam.camParameters.basicContainer.referencePosition.latitude/10000000.0;
 		double lon = decoded_cam->cam.camParameters.basicContainer.referencePosition.longitude/10000000.0;

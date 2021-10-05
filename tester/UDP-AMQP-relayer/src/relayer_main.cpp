@@ -69,6 +69,7 @@ int main(int argc, char *argv[]) {
 	// Create thread structure to pass the needed arguments to the thread callback
 	pthread_camrelayer_args_t cam_args;
 	int comm_port = 20000;
+	bool skipGN = false;
 
 	// Parse the command line options with the TCLAP library
 	try {
@@ -84,11 +85,15 @@ int main(int argc, char *argv[]) {
 		TCLAP::ValueArg<int> portArg("P","comm-port","Port for the UDP communication with ms-van3t",false,20000,"int");
 		cmd.add(portArg);
 
+		TCLAP::SwitchArg skipGNArg("S","skip-gn","Specify this option to send only Facilities Layer messages, instead of full ITS messages (Facilities layer + GeoNetworking + BTP). Warning! Experimental feature (it will work when only CAMs are sent)!");
+		cmd.add(skipGNArg);
+
 		cmd.parse(argc,argv);
 
 		cam_args.m_broker_address=urlArg.getValue();
 		cam_args.m_queue_name=queueArg.getValue();
 		comm_port=portArg.getValue();
+		skipGN=skipGNArg.getValue();
 
 		std::cout << "The relayer will connect to " + cam_args.m_broker_address + "/" + cam_args.m_queue_name << std::endl;
 	} catch (TCLAP::ArgException &tclape) { 
@@ -158,20 +163,35 @@ int main(int argc, char *argv[]) {
 		//int listen(int soc,int backlog);
 		recv_bytes = recvfrom(soc, buffer, buf_length, 0, NULL, NULL);
 
+		// At least 40 bytes are expected to relay the message. This is a "quick and dirty" solution to discard the shorter GN Beacon messages.
+		if(recv_bytes < 40) {
+			continue;
+		}
+
+		// This "if" has been added to avoid making the program crash if a message shorter than 60 B is received from ms-van3t (it should never happen, but we added this "if" just to be on the safe side)
+		if(skipGN == true && recv_bytes <= 60) {
+			continue;
+		}
+
 		memcpy(&gnmetadata,(void *) buffer, sizeof(GNmetadata_t));
 
 		uint64_t stationID = ntoh64(gnmetadata.stationID);
 		double lat = (double) ntohl(gnmetadata.lat)/1e7;
 		double lon = (double) ntohl(gnmetadata.lon)/1e7;
 		std::cout<<"Check:"<<sizeof(GNmetadata_t)<<"Station ID: "<<stationID<<" Coordinates: "<<lat<<" "<<lon<<std::endl;
+		std::cout<<"recv_bytes: " << recv_bytes << std::endl;
 
-		for(int i=0;i<recv_bytes;i++) {
+		for(int i=(skipGN == true ? 60 : 0);i<recv_bytes;i++) {
 			printf("%02X",buffer[i]);
 		}
 		// Just to add a newline at the end...
 		std::cout << std::endl;
 
-		CAM_relayer_obj.sendCAM_AMQP(buffer+sizeof(GNmetadata_t),recv_bytes-sizeof(GNmetadata_t),lat,lon,16);
+		if(skipGN == false) {
+			CAM_relayer_obj.sendCAM_AMQP(buffer+sizeof(GNmetadata_t),recv_bytes-sizeof(GNmetadata_t),lat,lon,16);
+		} else {
+			CAM_relayer_obj.sendCAM_AMQP(((uint8_t*)buffer)+60,((int)recv_bytes)-60,lat,lon,16);
+		}
 	}
 
 	return 0;
