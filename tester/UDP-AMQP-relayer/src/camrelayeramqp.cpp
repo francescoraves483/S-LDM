@@ -18,17 +18,22 @@ bool CAMrelayerAMQP::wait_sender_ready(void) {
 	return m_sender_ready;
 }
 
-void CAMrelayerAMQP::sendCAM_AMQP(uint8_t *buffer, int bufsize,const double &lat, const double &lon, const int &lev) {
+void CAMrelayerAMQP::sendCAM_AMQP(uint8_t *buffer, int bufsize,const double &lat, const double &lon, const int &lev,const uint32_t &gn_tst) {
 
     QuadKeys::QuadKeyTS tilesys;
 	const double latitude = lat;
 	const double longitude = lon;
 	// const int levelofDetail = lev;
+	const uint32_t gn_timestamp = gn_tst;
+
 
 	proton::message CAM_msg;
 	tilesys.setLevelOfDetail(18);
 	std::string quadkeys = tilesys.LatLonToQuadKey(latitude, longitude);
-    CAM_msg.properties().put("quadkeys", quadkeys);
+	CAM_msg.properties().put("quadkeys", quadkeys);
+//	CAM_msg.properties().put ("gn-timestamp",gn_timestamp);
+	CAM_msg.properties().put (cr_arg_cl.m_gn_tst_prop_name,gn_timestamp);
+
 
 
 //        std::cout<<"CAM: "<<std::endl;

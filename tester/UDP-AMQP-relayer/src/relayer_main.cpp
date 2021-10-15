@@ -82,6 +82,9 @@ int main(int argc, char *argv[]) {
 		TCLAP::ValueArg<std::string> queueArg("Q","queue","Broker queue or topic",false,"topic://5gcarmen.examples","string");
 		cmd.add(queueArg);
 
+		TCLAP::ValueArg<std::string> gntstpropArg("T","gn-tst-prop","Name of the amqp gn-timestamp property",false,"gn-timestamp","string");
+		cmd.add(gntstpropArg);
+
 		TCLAP::ValueArg<int> portArg("P","comm-port","Port for the UDP communication with ms-van3t",false,20000,"int");
 		cmd.add(portArg);
 
@@ -92,6 +95,7 @@ int main(int argc, char *argv[]) {
 
 		cam_args.m_broker_address=urlArg.getValue();
 		cam_args.m_queue_name=queueArg.getValue();
+		cam_args.m_gn_tst_prop_name=gntstpropArg.getValue();
 		comm_port=portArg.getValue();
 		skipGN=skipGNArg.getValue();
 
@@ -169,7 +173,7 @@ int main(int argc, char *argv[]) {
 		}
 
 		// This "if" has been added to avoid making the program crash if a message shorter than 60 B is received from ms-van3t (it should never happen, but we added this "if" just to be on the safe side)
-		if(skipGN == true && recv_bytes <= 60) {
+		if(skipGN == true && recv_bytes <= 68) {
 			continue;
 		}
 
@@ -178,19 +182,20 @@ int main(int argc, char *argv[]) {
 		uint64_t stationID = ntoh64(gnmetadata.stationID);
 		double lat = (double) ntohl(gnmetadata.lat)/1e7;
 		double lon = (double) ntohl(gnmetadata.lon)/1e7;
-		std::cout<<"Check:"<<sizeof(GNmetadata_t)<<"Station ID: "<<stationID<<" Coordinates: "<<lat<<" "<<lon<<std::endl;
+		uint32_t gn_tst = (uint32_t) ntohl (gnmetadata.gn_timestamp);
+		std::cout<<"Check:"<<sizeof(GNmetadata_t)<<"Station ID: "<<stationID<<" Coordinates: "<<lat<<" "<<lon<< " ;gn-timestamp: " << gn_tst << "; Metadata: " << sizeof(GNmetadata_t) << std::endl;
 		std::cout<<"recv_bytes: " << recv_bytes << std::endl;
 
-		for(int i=(skipGN == true ? 60 : 0);i<recv_bytes;i++) {
+		for(int i=(skipGN == true ? 68 : 0);i<recv_bytes;i++) {
 			printf("%02X",buffer[i]);
 		}
 		// Just to add a newline at the end...
 		std::cout << std::endl;
 
 		if(skipGN == false) {
-			CAM_relayer_obj.sendCAM_AMQP(buffer+sizeof(GNmetadata_t),recv_bytes-sizeof(GNmetadata_t),lat,lon,16);
+			CAM_relayer_obj.sendCAM_AMQP(buffer+sizeof(GNmetadata_t),recv_bytes-sizeof(GNmetadata_t),lat,lon,16,gn_tst);
 		} else {
-			CAM_relayer_obj.sendCAM_AMQP(((uint8_t*)buffer)+60,((int)recv_bytes)-60,lat,lon,16);
+			CAM_relayer_obj.sendCAM_AMQP(((uint8_t*)buffer)+68,((int)recv_bytes)-68,lat,lon,16,gn_tst);
 		}
 	}
 

@@ -335,7 +335,7 @@ AMQPClient::on_message(proton::delivery &d, proton::message &msg) {
 
 	// Decode the content of the message, using the decoder-module frontend class
 	// m_decodeFrontend.setPrintPacket(true); // <- uncomment to print the bytes of each received message. Should be used for debug only, and should be kept disabled when deploying the S-LDM.
-	if(m_decodeFrontend.decodeEtsi(message_bin_buf, message_bin.size (), decodedData)!=ETSI_DECODER_OK) {
+	if(m_decodeFrontend.decodeEtsi(message_bin_buf, message_bin.size (), decodedData, etsiDecoder::decoderFrontend::MSGTYPE_AUTO)!=ETSI_DECODER_OK) {
 		std::cerr << "Error! Cannot decode ETSI packet!" << std::endl;
 		return;
 	}
@@ -379,9 +379,31 @@ AMQPClient::on_message(proton::delivery &d, proton::message &msg) {
 		ldmmap::vehicleData_t vehdata;
 		ldmmap::LDMMap::LDMMap_error_t db_retval;
 
+		uint64_t gn_timestamp;
+		if(decodedData.type == etsiDecoder::ETSI_DECODED_CAM) {
+		    gn_timestamp = decodedData.gnTimestamp;
+		// There is no need for an else if(), as we can enter here only if the decoded message type is either ETSI_DECODED_CAM or ETSI_DECODED_CAM_NOGN
+		} else {
+		    if(msg.properties().size()>0) {
+			    proton::scalar gn_timestamp_prop = msg.properties().get(options_string_pop(m_opts_ptr->gn_timestamp_property));
+
+                            if(gn_timestamp_prop.type() == proton::UINT) {
+                                    gn_timestamp = proton::get<uint32_t>(gn_timestamp_prop);
+                            } else {
+                                    gn_timestamp=UINT64_MAX; // Set to an impossible value, to understand it is not specified (not set to zero beacuse is a possible correct value).
+                                    fprintf(stdout,"[WARNING] Current message contains no GN and no gn_timestamp property, ageCheck disabled\n");
+                            }
+                    } else {
+                            gn_timestamp=UINT64_MAX;
+                            fprintf(stdout,"[WARNING] Current message contains no GN and no gn_timestamp property, ageCheck disabled\n");
+                    }
+                }
+
+
+
 		// Check the age of the data store inside the database (if the age check is enabled / -g option not specified)
 		// before updating it with the new receive data
-		if(m_opts_ptr->ageCheck_enabled == true) {
+		if(m_opts_ptr->ageCheck_enabled == true && gn_timestamp != UINT64_MAX) {
 			ldmmap::LDMMap::returnedVehicleData_t retveh;
 
 			if(m_db_ptr->lookup(stationID,retveh)==ldmmap::LDMMap::LDMMAP_OK) {
@@ -406,14 +428,14 @@ AMQPClient::on_message(proton::delivery &d, proton::message &msg) {
 				// It is evident how the rx data should be discarded because older than the stored one
 				// gap = rx - stored = 4294967291 - 4294967292 = -1 > -300000 (-5 minutes) - The data is correctly discarded due to the second
 				// condition in the if() clause
-				long long int gap = static_cast<long long int>(decodedData.gnTimestamp)-static_cast<long long int>(retveh.vehData.gnTimestamp);
+				long long int gap = static_cast<long long int>(gn_timestamp)-static_cast<long long int>(retveh.vehData.gnTimestamp);
 
-				if((decodedData.gnTimestamp>retveh.vehData.gnTimestamp && gap>300000) ||
-					(decodedData.gnTimestamp<retveh.vehData.gnTimestamp && gap>-300000)) {
+				if((gn_timestamp>retveh.vehData.gnTimestamp && gap>300000) ||
+					(gn_timestamp<retveh.vehData.gnTimestamp && gap>-300000)) {
 					if(m_logfile_name!="") {
-						fprintf(m_logfile_file,"[LOG - DATABASE UPDATE (Client %s)] Message discarded (data is too old). Rx = %u, Stored = %lu, Gap = %lld\n",
+						fprintf(m_logfile_file,"[LOG - DATABASE UPDATE (Client %s)] Message discarded (data is too old). Rx = %lu, Stored = %lu, Gap = %lld\n",
 							m_client_id.c_str(),
-							decodedData.gnTimestamp,retveh.vehData.gnTimestamp,gap);
+							gn_timestamp,retveh.vehData.gnTimestamp,gap);
 						return;
 					}
 				}
@@ -426,7 +448,7 @@ AMQPClient::on_message(proton::delivery &d, proton::message &msg) {
 		vehdata.elevation = decoded_cam->cam.camParameters.basicContainer.referencePosition.altitude.altitudeValue/100.0;
 		vehdata.heading = decoded_cam->cam.camParameters.highFrequencyContainer.choice.basicVehicleContainerHighFrequency.heading.headingValue/10.0;
 		vehdata.speed_ms = decoded_cam->cam.camParameters.highFrequencyContainer.choice.basicVehicleContainerHighFrequency.speed.speedValue/100.0;
-		vehdata.gnTimestamp = decodedData.gnTimestamp;
+		vehdata.gnTimestamp = gn_timestamp;
 		vehdata.stationID = stationID; // It is very important to save also the stationID
 		vehdata.camTimestamp = static_cast<long>(decoded_cam->cam.generationDeltaTime);
 		vehdata.stationType = static_cast<ldmmap::e_StationTypeLDM>(decoded_cam->cam.camParameters.basicContainer.stationType);

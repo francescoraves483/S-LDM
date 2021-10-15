@@ -3,3 +3,14 @@
 /obj
 /tester/UDP-AMQP-relayer/obj
 /cachefile.sldmc
+
+# QtCreator project files
+S-LDM.creator.user
+S-LDM.creator.user.3504edb
+index.html
+S-LDM.cflags
+S-LDM.config
+S-LDM.creator
+S-LDM.cxxflags
+S-LDM.files
+S-LDM.includes

@@ -11,12 +11,14 @@ typedef struct _GNmetadata {
 uint64_t stationID;
 int32_t lat;
 int32_t lon;
+uint32_t gn_timestamp;
 } GNmetadata_t;
 
 typedef struct _pthread_camrelayer_args
 {
 	std::string m_broker_address;
 	std::string m_queue_name;
+	std::string m_gn_tst_prop_name;
 } pthread_camrelayer_args_t;
 
 class CAMrelayerAMQP : public proton::messaging_handler {
@@ -47,7 +49,7 @@ class CAMrelayerAMQP : public proton::messaging_handler {
 		// Public function to be called from any external thread to trigger the transmission of a CAM
 		// uint8_t *buffer should contain the CAM (encoded in any way, for instance with ASN.1 UPER)
 		// int bufsize should contain the size, in bytes, of "buffer"
-		void sendCAM_AMQP(uint8_t *buffer, int bufsize, const double &lat, const double &lon, const int &lev);
+		void sendCAM_AMQP(uint8_t *buffer, int bufsize, const double &lat, const double &lon, const int &lev,const uint32_t &gn_tst);
 
 		// Public function to wait for the sender to be ready, before calling sendCAM_AMQP()
 		// The application, after starting the container with run(), should call wait_sender_ready()

@@ -47,6 +47,7 @@
 #define LONGOPT_amqp_main_reconn_local_timeout_exp "amqp-main-reconn-local-timeout-exp"
 #define LONGOPT_enable_left_indicator_trigger "enable-left-indicator-trigger"
 #define LONGOPT_ms_rest_periodicity "ms-rest-periodicity"
+#define LONGOPT_gn_timestamp_property "gn-timestamp-property"
 // The corresponding "val"s are used internally and they should be set as sequential integers starting from 256 (the range 320-399 should not be used as it is reserved to the AMQP broker long options)
 #define LONGOPT_vehviz_update_interval_sec_val 256
 #define LONGOPT_indicator_trgman_disable_val 257
@@ -55,6 +56,7 @@
 #define LONGOPT_amqp_main_reconn_local_timeout_exp_val 260
 #define LONGOPT_enable_left_indicator_trigger_val 261
 #define LONGOPT_ms_rest_periodicity_val 262
+#define LONGOPT_gn_timestamp_property_val 263
 
 // AMQP broker (additional)
 #define LONGOPT_amqp_enable_additionals "amqp-enable-additionals"
@@ -115,6 +117,7 @@ static const struct option long_opts[]={
 	{LONGOPT_amqp_main_reconn_local_timeout_exp,	no_argument,		NULL, LONGOPT_amqp_main_reconn_local_timeout_exp_val},
 	{LONGOPT_enable_left_indicator_trigger,			no_argument,		NULL, LONGOPT_enable_left_indicator_trigger_val},
 	{LONGOPT_ms_rest_periodicity,					required_argument,	NULL, LONGOPT_ms_rest_periodicity_val},
+	{LONGOPT_gn_timestamp_property,					required_argument,	NULL, LONGOPT_gn_timestamp_property_val},
 
 	// Additional AMQP clients options
 	{LONGOPT_amqp_enable_additionals,					required_argument,		NULL, LONGOPT_amqp_enable_additionals_val},
@@ -299,6 +302,11 @@ static const struct option long_opts[]={
 	"  --"LONGOPT_ms_rest_periodicity " <value in seconds, can be floating point>: this option can be used to set the\n" \
 	"\t  periodicity at which the data is sent via REST interface when a triggering condition is detected (default: 1 s).\n"
 
+#define OPT_gn_timestamp_property \
+	"  --"LONGOPT_gn_timestamp_property ":set the name of the gn-timestamp property to look for in the amqp header when the\n" \
+	"\t  messages do not contain GN+BTP headers in the payload. Default: ("DEFAULT_GN_TIMESTAMP_PROPERTY").\n"
+
+
 static void print_long_info(char *argv0) {
 	fprintf(stdout,"\nUsage: %s [-A S-LDM coverage internal area] [options]\n"
 		"%s [-h | --"LONGOPT_h"]: print help and show options\n"
@@ -329,6 +337,7 @@ static void print_long_info(char *argv0) {
 		OPT_disable_quadkey_filter_description
 		OPT_enable_left_indicator_trigger
 		OPT_ms_rest_periodicity
+		OPT_gn_timestamp_property
 		OPT_amqp_main_idle_timeout
 		OPT_amqp_main_reconn_local_timeout_exp
 		OPT_brokers_enable_description
@@ -406,6 +415,7 @@ void options_initialize(struct options *options) {
 	options->ms_rest_port=DEFAULT_MANEUVERING_SERVICE_REST_SRV_PORT;
 	options->left_indicator_trg_enable=false; // Only the right turn indicator is considered, by default
 	options->ms_rest_periodicity=DEFAULT_MANEUVERING_SERVICE_REST_PERIODICITY;
+	options->gn_timestamp_property=options_string_declare();
 
 	options->vehviz_nodejs_addr=options_string_declare();
 	options->vehviz_nodejs_port=DEFAULT_VEHVIZ_NODEJS_UDP_PORT;
@@ -665,6 +675,13 @@ unsigned int parse_options(int argc, char **argv, struct options *options) {
 				}
 				break;
 
+			case LONGOPT_gn_timestamp_property_val:
+				if(!options_string_push(&(options->gn_timestamp_property),optarg)) {
+					fprintf(stderr,"Error in parsing the gn timestamp property name: %s.\n",optarg);
+					print_short_info_err(options,argv[0]);
+				}
+				break;
+
 			// Additional AMQP clients options
 			// ----------------------------------
 			case LONGOPT_amqp_enable_additionals_val:
@@ -881,6 +898,13 @@ unsigned int parse_options(int argc, char **argv, struct options *options) {
 	if(options_string_len(options->vehviz_nodejs_addr)<=0) {
 		if(!options_string_push(&(options->vehviz_nodejs_addr),DEFAULT_VEHVIZ_NODEJS_UDP_ADDR)) {
 			fprintf(stderr,"Error! Cannot set the default IPv4 address for the UDP connection to the Vehicle Visualizer Node.js server.\nPlease report this bug to the developers.\n");
+			exit(EXIT_FAILURE);
+		}
+	}
+
+	if(options_string_len(options->gn_timestamp_property)<=0) {
+		if(!options_string_push(&(options->gn_timestamp_property),DEFAULT_GN_TIMESTAMP_PROPERTY)) {
+			fprintf(stderr,"Error! Cannot set the default gn timestamp property name.\nPlease report this bug to the developers.\n");
 			exit(EXIT_FAILURE);
 		}
 	}
