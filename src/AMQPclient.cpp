@@ -387,8 +387,8 @@ AMQPClient::on_message(proton::delivery &d, proton::message &msg) {
 		    if(msg.properties().size()>0) {
 			    proton::scalar gn_timestamp_prop = msg.properties().get(options_string_pop(m_opts_ptr->gn_timestamp_property));
 
-                            if(gn_timestamp_prop.type() == proton::UINT) {
-                                    gn_timestamp = proton::get<uint32_t>(gn_timestamp_prop);
+                            if(gn_timestamp_prop.type() == proton::LONG) {
+                                    gn_timestamp = static_cast<uint64_t>(proton::get<long>(gn_timestamp_prop));
                             } else {
                                     gn_timestamp=UINT64_MAX; // Set to an impossible value, to understand it is not specified (not set to zero beacuse is a possible correct value).
                                     fprintf(stdout,"[WARNING] Current message contains no GN and no gn_timestamp property, ageCheck disabled\n");

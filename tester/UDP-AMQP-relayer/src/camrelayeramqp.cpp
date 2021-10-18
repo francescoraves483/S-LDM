@@ -24,7 +24,7 @@ void CAMrelayerAMQP::sendCAM_AMQP(uint8_t *buffer, int bufsize,const double &lat
 	const double latitude = lat;
 	const double longitude = lon;
 	// const int levelofDetail = lev;
-	const uint32_t gn_timestamp = gn_tst;
+	const long gn_timestamp = gn_tst;
 
 
 	proton::message CAM_msg;
