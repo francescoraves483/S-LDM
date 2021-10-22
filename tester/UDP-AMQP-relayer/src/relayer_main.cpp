@@ -82,7 +82,7 @@ int main(int argc, char *argv[]) {
 		TCLAP::ValueArg<std::string> queueArg("Q","queue","Broker queue or topic",false,"topic://5gcarmen.examples","string");
 		cmd.add(queueArg);
 
-		TCLAP::ValueArg<std::string> gntstpropArg("T","gn-tst-prop","Name of the amqp gn-timestamp property",false,"gn-timestamp","string");
+		TCLAP::ValueArg<std::string> gntstpropArg("T","gn-tst-prop","Name of the amqp gn-timestamp property",false,"gn_ts","string");
 		cmd.add(gntstpropArg);
 
 		TCLAP::ValueArg<int> portArg("P","comm-port","Port for the UDP communication with ms-van3t",false,20000,"int");

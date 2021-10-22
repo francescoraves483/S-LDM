@@ -382,16 +382,77 @@ AMQPClient::on_message(proton::delivery &d, proton::message &msg) {
 		uint64_t gn_timestamp;
 		if(decodedData.type == etsiDecoder::ETSI_DECODED_CAM) {
 		    gn_timestamp = decodedData.gnTimestamp;
+
+		    // If this is a full ITS message manage the low frequency container data
+		    // Check if this CAM contains the low frequency container
+		    // and if the ext. lights hack for older versions CAMs is disable
+		    // If yes, store the exterior lights status
+		    // If not, check if an older information about the exterior lights of the current vehicle already exist in the database (using m_db_ptr->lookup()),
+		    // if this data exists, use this data, if not, just set the exterior lights information as unavailable
+		    if(decoded_cam->cam.camParameters.lowFrequencyContainer!=NULL) {
+			    // In any normal, uncorrupted CAM, buf should never be NULL and it should contain at least one element (i.e. buf[0] always exists)
+			    if(decoded_cam->cam.camParameters.lowFrequencyContainer->choice.basicVehicleContainerLowFrequency.exteriorLights.buf!=NULL) {
+				    vehdata.exteriorLights = ldmmap::OptionalDataItem<uint8_t>(decoded_cam->cam.camParameters.lowFrequencyContainer->choice.basicVehicleContainerLowFrequency.exteriorLights.buf[0]);
+			    } else {
+				    // Data from a corrupted decoded CAM is considered as unavailable, for the time being
+				    vehdata.exteriorLights = ldmmap::OptionalDataItem<uint8_t>(false);
+			    }
+		    } else {
+			    ldmmap::LDMMap::returnedVehicleData_t retveh;
+
+                            if(m_db_ptr->lookup(stationID,retveh)==ldmmap::LDMMap::LDMMAP_OK) {
+                                    vehdata.exteriorLights = retveh.vehData.exteriorLights;
+                            } else {
+                                    vehdata.exteriorLights = ldmmap::OptionalDataItem<uint8_t>(false);
+                            }
+                    }
+
 		// There is no need for an else if(), as we can enter here only if the decoded message type is either ETSI_DECODED_CAM or ETSI_DECODED_CAM_NOGN
 		} else {
 		    if(msg.properties().size()>0) {
 			    proton::scalar gn_timestamp_prop = msg.properties().get(options_string_pop(m_opts_ptr->gn_timestamp_property));
 
+                            // If the gn_timestamp property is available, check if its type is correct
                             if(gn_timestamp_prop.type() == proton::LONG) {
                                     gn_timestamp = static_cast<uint64_t>(proton::get<long>(gn_timestamp_prop));
+
+                                    // If the gn_timestamp property is there and the ext_lights_hijack is enabled we know this is a bmw message so we check for
+                                    // the hijacked highFreqContainer to extract the extirior lights information instead of the lowfreqContainer
+                                    // The agreed encoding for the hijack of the driveDirection is:
+                                    /*                            DriveDirection = 0 -----> No exterior lights on.
+                                                                  DriveDirection = 1 -----> Right turn signal on.
+                                                                  DriveDirection = 2 -----> Left turn signal on.
+                                     */
+                                    if(m_opts_ptr->ext_lights_hijack_enable){
+                                        uint8_t ext_lights = 0;
+                                        // To emulate the encoding found in the lowfreqContainer we place 1<<(1+3=4) for leftTurnSignalOn, and 1<<(2+3=5) for rightTurnSignalOn
+                                        if(decoded_cam->cam.camParameters.highFrequencyContainer.choice.basicVehicleContainerHighFrequency.driveDirection != 0)
+                                          ext_lights |= 1 << (decoded_cam->cam.camParameters.highFrequencyContainer.choice.basicVehicleContainerHighFrequency.driveDirection + 3);
+
+                                        vehdata.exteriorLights = ldmmap::OptionalDataItem<uint8_t>(ext_lights);
+
+                                      } else {
+                                        if(decoded_cam->cam.camParameters.lowFrequencyContainer!=NULL) {
+                                                // In any normal, uncorrupted CAM, buf should never be NULL and it should contain at least one element (i.e. buf[0] always exists)
+                                                if(decoded_cam->cam.camParameters.lowFrequencyContainer->choice.basicVehicleContainerLowFrequency.exteriorLights.buf!=NULL) {
+                                                        vehdata.exteriorLights = ldmmap::OptionalDataItem<uint8_t>(decoded_cam->cam.camParameters.lowFrequencyContainer->choice.basicVehicleContainerLowFrequency.exteriorLights.buf[0]);
+                                                } else {
+                                                        // Data from a corrupted decoded CAM is considered as unavailable, for the time being
+                                                        vehdata.exteriorLights = ldmmap::OptionalDataItem<uint8_t>(false);
+                                                }
+                                        } else {
+                                                ldmmap::LDMMap::returnedVehicleData_t retveh;
+
+                                                if(m_db_ptr->lookup(stationID,retveh)==ldmmap::LDMMap::LDMMAP_OK) {
+                                                        vehdata.exteriorLights = retveh.vehData.exteriorLights;
+                                                } else {
+                                                        vehdata.exteriorLights = ldmmap::OptionalDataItem<uint8_t>(false);
+                                                }
+                                        }
+                                      }
                             } else {
                                     gn_timestamp=UINT64_MAX; // Set to an impossible value, to understand it is not specified (not set to zero beacuse is a possible correct value).
-                                    fprintf(stdout,"[WARNING] Current message contains no GN and no gn_timestamp property, ageCheck disabled\n");
+                                    fprintf(stdout,"[WARNING] Current message contains no GN and a not supported gn_timestamp property, ageCheck disabled\n");
                             }
                     } else {
                             gn_timestamp=UINT64_MAX;
@@ -478,28 +539,29 @@ AMQPClient::on_message(proton::delivery &d, proton::message &msg) {
 			vehdata.vehicleLength = ldmmap::OptionalDataItem<long>(false);
 		}
 
-		// Manage the low frequency container data
-		// Check if this CAM contains the low frequency container
-		// If yes, store the exterior lights status
-		// If not, check if an older information about the exterior lights of the current vehicle already exist in the database (using m_db_ptr->lookup()),
-		// if this data exists, use this data, if not, just set the exterior lights information as unavailable
-		if(decoded_cam->cam.camParameters.lowFrequencyContainer!=NULL) {
-			// In any normal, uncorrupted CAM, buf should never be NULL and it should contain at least one element (i.e. buf[0] always exists)
-			if(decoded_cam->cam.camParameters.lowFrequencyContainer->choice.basicVehicleContainerLowFrequency.exteriorLights.buf!=NULL) {
-				vehdata.exteriorLights = ldmmap::OptionalDataItem<uint8_t>(decoded_cam->cam.camParameters.lowFrequencyContainer->choice.basicVehicleContainerLowFrequency.exteriorLights.buf[0]);
-			} else {
-				// Data from a corrupted decoded CAM is considered as unavailable, for the time being
-				vehdata.exteriorLights = ldmmap::OptionalDataItem<uint8_t>(false);
-			}
-		} else {
-			ldmmap::LDMMap::returnedVehicleData_t retveh;
+//		// Manage the low frequency container data
+//		// Check if this CAM contains the low frequency container
+//		// and if the ext. lights hack for older versions CAMs is disable
+//		// If yes, store the exterior lights status
+//		// If not, check if an older information about the exterior lights of the current vehicle already exist in the database (using m_db_ptr->lookup()),
+//		// if this data exists, use this data, if not, just set the exterior lights information as unavailable
+//		if(decoded_cam->cam.camParameters.lowFrequencyContainer!=NULL) {
+//			// In any normal, uncorrupted CAM, buf should never be NULL and it should contain at least one element (i.e. buf[0] always exists)
+//			if(decoded_cam->cam.camParameters.lowFrequencyContainer->choice.basicVehicleContainerLowFrequency.exteriorLights.buf!=NULL) {
+//				vehdata.exteriorLights = ldmmap::OptionalDataItem<uint8_t>(decoded_cam->cam.camParameters.lowFrequencyContainer->choice.basicVehicleContainerLowFrequency.exteriorLights.buf[0]);
+//			} else {
+//				// Data from a corrupted decoded CAM is considered as unavailable, for the time being
+//				vehdata.exteriorLights = ldmmap::OptionalDataItem<uint8_t>(false);
+//			}
+//		} else {
+//			ldmmap::LDMMap::returnedVehicleData_t retveh;
 
-			if(m_db_ptr->lookup(stationID,retveh)==ldmmap::LDMMap::LDMMAP_OK) {
-				vehdata.exteriorLights = retveh.vehData.exteriorLights;
-			} else {
-				vehdata.exteriorLights = ldmmap::OptionalDataItem<uint8_t>(false);
-			}
-		}
+//			if(m_db_ptr->lookup(stationID,retveh)==ldmmap::LDMMap::LDMMAP_OK) {
+//				vehdata.exteriorLights = retveh.vehData.exteriorLights;
+//			} else {
+//				vehdata.exteriorLights = ldmmap::OptionalDataItem<uint8_t>(false);
+//			}
+//		}
 
 		// If logging is enabled, compute also an "instantaneous update period" metric (i.e., how much time has passed between two consecutive vehicle updates)
 		if(m_logfile_name!="") {

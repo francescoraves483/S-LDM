@@ -48,6 +48,7 @@
 #define LONGOPT_enable_left_indicator_trigger "enable-left-indicator-trigger"
 #define LONGOPT_ms_rest_periodicity "ms-rest-periodicity"
 #define LONGOPT_gn_timestamp_property "gn-timestamp-property"
+#define LONGOPT_enable_ext_lights_hijack "enable-ext-lights-hijack"
 // The corresponding "val"s are used internally and they should be set as sequential integers starting from 256 (the range 320-399 should not be used as it is reserved to the AMQP broker long options)
 #define LONGOPT_vehviz_update_interval_sec_val 256
 #define LONGOPT_indicator_trgman_disable_val 257
@@ -57,6 +58,7 @@
 #define LONGOPT_enable_left_indicator_trigger_val 261
 #define LONGOPT_ms_rest_periodicity_val 262
 #define LONGOPT_gn_timestamp_property_val 263
+#define LONGOPT_enable_ext_lights_hijack_val 264
 
 // AMQP broker (additional)
 #define LONGOPT_amqp_enable_additionals "amqp-enable-additionals"
@@ -118,6 +120,7 @@ static const struct option long_opts[]={
 	{LONGOPT_enable_left_indicator_trigger,			no_argument,		NULL, LONGOPT_enable_left_indicator_trigger_val},
 	{LONGOPT_ms_rest_periodicity,					required_argument,	NULL, LONGOPT_ms_rest_periodicity_val},
 	{LONGOPT_gn_timestamp_property,					required_argument,	NULL, LONGOPT_gn_timestamp_property_val},
+	{LONGOPT_enable_ext_lights_hijack,			no_argument,		NULL, LONGOPT_enable_ext_lights_hijack_val},
 
 	// Additional AMQP clients options
 	{LONGOPT_amqp_enable_additionals,					required_argument,		NULL, LONGOPT_amqp_enable_additionals_val},
@@ -306,6 +309,10 @@ static const struct option long_opts[]={
 	"  --"LONGOPT_gn_timestamp_property ":set the name of the gn-timestamp property to look for in the amqp header when the\n" \
 	"\t  messages do not contain GN+BTP headers in the payload. Default: ("DEFAULT_GN_TIMESTAMP_PROPERTY").\n"
 
+#define OPT_enable_ext_lights_hijack \
+	"  --"LONGOPT_enable_ext_lights_hijack": when this options is set to 'true', the information for ext. lights is enabled\n" \
+	"\t  to be extracted from a highFreqContainer field inside CAMs (to solve version incompatibilities issues with the lowFreqContainer),\n" \
+	"\t  instead of using the correct container.\n"
 
 static void print_long_info(char *argv0) {
 	fprintf(stdout,"\nUsage: %s [-A S-LDM coverage internal area] [options]\n"
@@ -336,6 +343,7 @@ static void print_long_info(char *argv0) {
 		OPT_indicator_trgman_disable_description
 		OPT_disable_quadkey_filter_description
 		OPT_enable_left_indicator_trigger
+		OPT_enable_ext_lights_hijack
 		OPT_ms_rest_periodicity
 		OPT_gn_timestamp_property
 		OPT_amqp_main_idle_timeout
@@ -416,6 +424,7 @@ void options_initialize(struct options *options) {
 	options->left_indicator_trg_enable=false; // Only the right turn indicator is considered, by default
 	options->ms_rest_periodicity=DEFAULT_MANEUVERING_SERVICE_REST_PERIODICITY;
 	options->gn_timestamp_property=options_string_declare();
+	options->ext_lights_hijack_enable=false; // Only the appropiate ext. lights field in the lowFreqContainer is used by default
 
 	options->vehviz_nodejs_addr=options_string_declare();
 	options->vehviz_nodejs_port=DEFAULT_VEHVIZ_NODEJS_UDP_PORT;
@@ -680,6 +689,10 @@ unsigned int parse_options(int argc, char **argv, struct options *options) {
 					fprintf(stderr,"Error in parsing the gn timestamp property name: %s.\n",optarg);
 					print_short_info_err(options,argv[0]);
 				}
+				break;
+
+			case LONGOPT_enable_ext_lights_hijack_val:
+				options->ext_lights_hijack_enable=true;
 				break;
 
 			// Additional AMQP clients options
