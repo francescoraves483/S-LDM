@@ -123,6 +123,8 @@ class AMQPClient : public proton::messaging_handler {
 			m_quadKey_filter=filter;
 		}
 		
+		inline ldmmap::OptionalDataItem<uint8_t> manage_LowfreqContainer(CAM_t *decoded_cam,uint32_t stationID);
+
 		void on_container_start(proton::container &c) override;
 		void on_connection_open(proton::connection &conn) override;
 		void on_message(proton::delivery &d, proton::message &msg) override;
