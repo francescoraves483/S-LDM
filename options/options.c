@@ -544,8 +544,9 @@ unsigned int parse_options(int argc, char **argv, struct options *options) {
 				break;
 
 			case 'r':
+				// fprintf(stdout,"[INFO] Specified a custom address for the Maneuvering Service REST server: %s\n",optarg);
 				if(!options_string_push(&(options->ms_rest_addr),optarg)) {
-					fprintf(stderr,"Error in parsing the Maneuvering Service REST server address.\n");
+					fprintf(stderr,"Error in parsing the Maneuvering Service REST server address. Did you specify it twice?\n");
 					print_short_info_err(options,argv[0]);
 				}
 				break;
