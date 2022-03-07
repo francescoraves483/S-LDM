@@ -116,7 +116,7 @@ The repository contains the following folders:
 - `examples`, for any example useful to the development of the S-LDM - *currently unused*
 - `include`, for all the header files
 - `js`, containing the web-based vehicle visualized javascript files (the vehicle visualizer is licensed under **GPLv2** and it is derived directly from [ms-van3t](https://github.com/marcomali/ms-van3t))
-- `options`, containg the source files of a C, highly-efficient and customizable options management module (the options module is licensed under **GPLv2** and it is derived directly from [LaTe](https://github.com/francescoraves483/LaMP-LaTe))
+- `options`, containg the source files of a C, highly-efficient and customizable options management module (the options module is licensed under **GPLv2** and it is derived directly from [LaTe](https://github.com/francescoraves483/LaMP_LaTe))
 - `src`, for all the .c and .cpp/.cc source files
 - `tester`, for a tester module, to be used in conjunction with [ms-van3t](https://github.com/marcomali/ms-van3t), with the aim of testing the S-LDM in the lab with emulated vehicles
 - `vehicle-visualizer`, containing the C++ code for the communication between the main S-LDM process and the javascript server managing the vehicle visualizer (vehicle-visualizer is licensed under **GPLv2** and it is derived directly from [ms-van3t](https://github.com/marcomali/ms-van3t))
