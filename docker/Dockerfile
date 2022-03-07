@@ -1,32 +1,20 @@
 FROM ubuntu:20.04
 
 ENV TZ=Europe/Rome
-# Initial test area from Trento Nord
-# ENV SLDM_INTERNAL_AREA 46.122157:11.074610-46.242090:11.259199
-# Area between San Michele all'Adige and Egna
+# Default area between San Michele all'Adige and Egna (Italy)
 ENV SLDM_INTERNAL_AREA 46.174740:11.108462-46.339863:11.312573
-# (Big) area around Munich
-# ENV SLDM_INTERNAL_AREA 47.493619:11.241605-48.386217:12.278218
-# (Big) test area between Trento and Brennerpass
-# ENV SLDM_INTERNAL_AREA 46.0201280:11.0279790-47.0345400:11.686929
-# (Big) Cross-border deployment area between Trento and Innsbruck
-# ENV SLDM_INTERNAL_AREA 46.0201280:11.0279790-47.307088:11.686929
 ENV SLDM_EXTERNAL_AREA_LAT_FACTOR 0.0002
 ENV SLDM_EXTERNAL_AREA_LON_FACTOR 0.0002
-# External mapped port for 5G-CARMEN AMQP testing -> 31129
+# Default broker URL and port
 ENV BROKER_URL 127.0.0.1:5672
-# ENV BROKER_URL 188.125.17.78:31129 -> MTA MEC broker address (local copy)
-# ENV BROKER_URL 213.162.90.227:5672 -> MTA MEC broker address (real MNO AMQP) - GUI accessible at 213.162.90.229:31128
-# ENV BROKER_URL 163.162.42.24:5672 -> TIM MEC broker address (real MNO AMQP) - GUI accessible at 163.162.42.19:31128 (requires firewall opening)
-# ENV BROKER_URL 80.159.227.2:5672 -> DTAG MEC broker address (real MNO AMQP) - GUI accessible at 80.159.227.46:31128
+# Default broker topic
 ENV AMQP_TOPIC topic://5gcarmen.examples
 ENV MS_REST_ADDRESS http://localhost
 ENV MS_REST_PORT 8000
 ENV VEHVIZ_UDP_ADDRESS 127.0.0.1
 ENV VEHVIZ_UDP_PORT 48110
-# External mapped web interface port for 5G-CARMEN -> 31128
 ENV VEHVIZ_WEB_PORT 8080
-#ENV SLDM_OTHER_OPTIONS "-u admin -p admin -I"
+# To set a default plain authentication with username "user" and password "passwd", use: ENV SLDM_OTHER_OPTIONS "-u user -p passwd -I"
 
 # Set timezone
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
