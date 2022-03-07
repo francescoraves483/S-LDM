@@ -95,7 +95,7 @@ A sample command for running the S-LDM is provided below:
 ./SLDM -A 42.072561:12.071470-42.392071:12.815384 --ext-area-lat-factor 0.002 --ext-area-lon-factor 0.002 --broker-url 127.0.0.1:5672 --broker-queue topic://5gcarmen.samples -L stdout --disable-quadkey-filter
 ```
 
-This command will make the S-LDM cover an rectangular area between (lat, lon) `42.072561, 12.071470` and (lat, lon) `42.392071, 12.815384`. It also defines an external area by extending all the rectangle sides by 0.002 degrees. It sets then the S-LDM to subscribe to an AMQP 1.0 broker located at `127.0.0.1:5672`, using a queue/topic named `topic://5gcarmen.samples`. It also enables verbose output on standard output with the `-L stdout` option. Finally, it disables the Quadkey check (with `--disable-quadkey-filter`) to receive all CAM messages, even if they do not contain the `quadkeys` AMQP 1.0 property.
+This command will make the S-LDM cover a rectangular area between (lat, lon) `42.072561, 12.071470` and (lat, lon) `42.392071, 12.815384`. It also defines an external area by extending all the rectangle sides by 0.002 degrees. It sets then the S-LDM to subscribe to an AMQP 1.0 broker located at `127.0.0.1:5672`, using a queue/topic named `topic://5gcarmen.samples`. It also enables verbose output on standard output with the `-L stdout` option. Finally, it disables the Quadkey check (with `--disable-quadkey-filter`) to receive all CAM messages, even if they do not contain the `quadkeys` AMQP 1.0 property.
 After starting the S-LDM with this command, it will expect to receive CAMs from vehicles on the `topic://5gcarmen.samples` queue of an AMQP 1.0 broker available at `127.0.0.1:5672`.
 
 Thanks to the `-L` option, verbose information about each received message will be printed to standard output.
@@ -118,7 +118,7 @@ The repository contains the following folders:
 - `js`, containing the web-based vehicle visualized javascript files (the vehicle visualizer is licensed under **GPLv2** and it is derived directly from [ms-van3t](https://github.com/marcomali/ms-van3t))
 - `options`, containg the source files of a C, highly-efficient and customizable options management module (the options module is licensed under **GPLv2** and it is derived directly from [LaTe](https://github.com/francescoraves483/LaMP_LaTe))
 - `src`, for all the .c and .cpp/.cc source files
-- `tester`, for a tester module, to be used in conjunction with [ms-van3t](https://github.com/marcomali/ms-van3t), with the aim of testing the S-LDM in the lab with emulated vehicles
+- `tester`, for a tester module, to be used in conjunction with [ms-van3t](https://github.com/marcomali/ms-van3t), with the aim of testing the S-LDM in the lab with emulated vehicles. This folder also includes a sample Python 3 REST server to mock any MEC service receiving data from the S-LDM REST client.
 - `vehicle-visualizer`, containing the C++ code for the communication between the main S-LDM process and the javascript server managing the vehicle visualizer (vehicle-visualizer is licensed under **GPLv2** and it is derived directly from [ms-van3t](https://github.com/marcomali/ms-van3t))
 
 
