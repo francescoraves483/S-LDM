@@ -129,8 +129,12 @@ web::json::value ManeuveringServiceRestClient::make_SLDM_json(int eventID) {
 	int idx = 0;
 	web::json::value vehicles = web::json::value::array();
 
+
 	for(ldmmap::LDMMap::returnedVehicleData_t vehdata : returnedvehs) {
-		// Compute the relative distance w.r.t. the reference vehicle
+		if((vehdata.vehData.stationType != ldmmap::StationType_LDM_passengerCar)&&(vehdata.vehData.stationType != ldmmap::StationType_LDM_specificCategoryVehicle1)){
+		    continue;
+		  }
+	    // Compute the relative distance w.r.t. the reference vehicle
 		wgsGeod.Inverse(refveh.vehData.lat,refveh.vehData.lon,vehdata.vehData.lat,vehdata.vehData.lon,refRelDist);
 
 		vehicles[idx] = make_vehicle(vehdata.vehData.stationID,
@@ -147,6 +151,9 @@ web::json::value ManeuveringServiceRestClient::make_SLDM_json(int eventID) {
 			refRelDist,
 			vehdata.vehData.stationType,
 			now_us-vehdata.vehData.timestamp_us,
+			now_us-vehdata.vehData.on_msg_timestamp_us,
+			vehdata.vehData.on_msg_timestamp_us,
+			vehdata.vehData.timestamp_us,
 			vehdata.vehData.heading);
 
 		idx++;
@@ -156,7 +163,6 @@ web::json::value ManeuveringServiceRestClient::make_SLDM_json(int eventID) {
 
 	return sldm_json;
 }
-
 web::json::value ManeuveringServiceRestClient::make_vehicle(uint64_t stationID,
 	double lat, 
 	double lon, 
@@ -171,6 +177,9 @@ web::json::value ManeuveringServiceRestClient::make_vehicle(uint64_t stationID,
 	double relative_dist_m,
 	ldmmap::e_StationTypeLDM stationType,
 	uint64_t diff_ref_tstamp,
+	uint64_t diff_rec_tstamp,
+	uint64_t cam_rec_tstamp,
+	uint64_t db_up_tstamp,
 	double heading
 	) {
 
@@ -189,7 +198,13 @@ web::json::value ManeuveringServiceRestClient::make_vehicle(uint64_t stationID,
 	vehicle["heading"] = MAKE_NUM(heading);
 
 	// This value represents the difference between when the database is being read for this vehicle (i.e., now) and when the data for that vehicle was last stored
-	vehicle["time_since_generation_tstamp"] = MAKE_NUM(diff_ref_tstamp);
+	vehicle["time_since_database_update_us"] = MAKE_NUM(diff_ref_tstamp);
+	// This value represents the difference between when the database is being read for this vehicle (i.e., now) and when the data for that vehicle was received
+	vehicle["time_since_received_cam_us"] = MAKE_NUM(diff_rec_tstamp);
+	// This value represents the timestamp of when the current information for this vehicle was received
+	vehicle["cam_received_tstamp_us"] = MAKE_NUM(cam_rec_tstamp);
+	// This value represents the timestamp of when the current information for this vehicle was stored in the database
+	vehicle["database_update_tstamp_us"] = MAKE_NUM(db_up_tstamp);
 
 	if(car_length_mm.isAvailable()) {
 		vehicle["car_len_mm"] = MAKE_NUM(car_length_mm.getData());

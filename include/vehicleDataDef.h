@@ -43,7 +43,20 @@ namespace ldmmap {
 		StationType_LDM_specialVehicles	= 10,
 		StationType_LDM_tram = 11,
 		StationType_LDM_roadSideUnit = 15,
-		StationType_LDM_unspecified= 99
+		StationType_LDM_specificCategoryVehicle1 = 100,
+		StationType_LDM_specificCategoryVehicle2 = 101,
+		StationType_LDM_specificCategoryVehicle3 = 102,
+		StationType_LDM_specificCategoryVehicle4 = 103,
+		StationType_LDM_specificCategoryVehicle5 = 104,
+		StationType_LDM_specificCategoryVehicle6 = 105,
+		StationType_LDM_specificCategoryVehicle7 = 106,
+		StationType_LDM_specificCategoryVehicle8 = 107,
+		StationType_LDM_specificCategoryVehicle9 = 108,
+		StationType_LDM_detectedPedestrian = 110,
+		StationType_LDM_detectedPassengerCar = 115,
+		StationType_LDM_detectedTruck = 117,
+
+		StationType_LDM_unspecified= 120
 	} e_StationTypeLDM;
 
 	// This structure contains all the data stored in the database for each vehicle (except for the PHPoints)
@@ -57,6 +70,7 @@ namespace ldmmap {
 		uint64_t gnTimestamp;
 		long camTimestamp; // This is the CAM message GenerationDeltaTime
 		uint64_t timestamp_us;
+		uint64_t on_msg_timestamp_us;
 		OptionalDataItem<long> vehicleWidth;
 		OptionalDataItem<long> vehicleLength;
 		e_StationTypeLDM stationType;

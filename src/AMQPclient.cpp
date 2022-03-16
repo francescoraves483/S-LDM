@@ -324,6 +324,9 @@ AMQPClient::on_container_start(proton::container &c) {
 
 void 
 AMQPClient::on_message(proton::delivery &d, proton::message &msg) {
+
+	uint64_t on_msg_timestamp_us = get_timestamp_us();
+
 	etsiDecoder::etsiDecodedData_t decodedData;
 
 	uint64_t bf = 0.0,af = 0.0;
@@ -383,6 +386,8 @@ AMQPClient::on_message(proton::delivery &d, proton::message &msg) {
 		uint32_t stationID = decoded_cam->header.stationID;
 		double l_inst_period=0.0;
 
+		uint32_t stationTypeID = decoded_cam->cam.camParameters.basicContainer.stationType;
+
 		// After getting the lat and lon values from the CAM, check if it is inside the S-LDM full coverage area,
 		// using the areaFilter module (which can access the command line options, thus also the coverage area
 		// specified by the user)
@@ -413,6 +418,22 @@ AMQPClient::on_message(proton::delivery &d, proton::message &msg) {
 		    gn_timestamp = decodedData.gnTimestamp;
 		    vehdata.exteriorLights = manage_LowfreqContainer (decoded_cam,stationID);
 
+		    // Since on 5G-CARMEN only some specific vehicles use the complete GN+BTP+CAM messages
+		    if(m_opts_ptr->interop_hijack_enable){
+			// when the enable-interop-hijack option is true, we save all passengerCars=5 as specificCategoryVehicle1=100
+			if(static_cast<ldmmap::e_StationTypeLDM>(decoded_cam->cam.camParameters.basicContainer.stationType)==ldmmap::StationType_LDM_passengerCar){
+			  vehdata.stationType = ldmmap::StationType_LDM_specificCategoryVehicle1;
+			  }
+			// when the enable-interop-hijack option is true, we save all StationType_LDM_unknown=0 without changes to not interfere with the map_render
+			else{
+			    vehdata.stationType = static_cast<ldmmap::e_StationTypeLDM>(decoded_cam->cam.camParameters.basicContainer.stationType);
+			}
+		      }
+		    else{
+			//If enable-interop-hijack option is false, store stationType as usual
+			vehdata.stationType = static_cast<ldmmap::e_StationTypeLDM>(decoded_cam->cam.camParameters.basicContainer.stationType);
+		      }
+
 
 		// There is no need for an else if(), as we can enter here only if the decoded message type is either ETSI_DECODED_CAM or ETSI_DECODED_CAM_NOGN
 		} else {
@@ -424,7 +445,7 @@ AMQPClient::on_message(proton::delivery &d, proton::message &msg) {
                                     gn_timestamp = static_cast<uint64_t>(proton::get<long>(gn_timestamp_prop));
 
                                     // If the gn_timestamp property is there and the ext_lights_hijack is enabled we know this is a bmw message so we check for
-                                    // the hijacked highFreqContainer to extract the extirior lights information instead of the lowfreqContainer
+                                    // the hijacked highFreqContainer to extract the exterior lights information instead of the lowfreqContainer
                                     // The agreed encoding for the hijack of the driveDirection is:
                                     /*                            DriveDirection = 0 -----> No exterior lights on.
                                                                   DriveDirection = 1 -----> Right turn signal on.
@@ -449,6 +470,8 @@ AMQPClient::on_message(proton::delivery &d, proton::message &msg) {
                             gn_timestamp=UINT64_MAX;
                             fprintf(stdout,"[WARNING] Current message contains no GN and no gn_timestamp property, ageCheck disabled\n");
                     }
+
+                    vehdata.stationType = static_cast<ldmmap::e_StationTypeLDM>(decoded_cam->cam.camParameters.basicContainer.stationType);
                 }
 
 
@@ -497,13 +520,14 @@ AMQPClient::on_message(proton::delivery &d, proton::message &msg) {
 		vehdata.lon = lon;
 		vehdata.lat = lat;
 		vehdata.timestamp_us = get_timestamp_us();
+		vehdata.on_msg_timestamp_us = on_msg_timestamp_us;
 		vehdata.elevation = decoded_cam->cam.camParameters.basicContainer.referencePosition.altitude.altitudeValue/100.0;
 		vehdata.heading = decoded_cam->cam.camParameters.highFrequencyContainer.choice.basicVehicleContainerHighFrequency.heading.headingValue/10.0;
 		vehdata.speed_ms = decoded_cam->cam.camParameters.highFrequencyContainer.choice.basicVehicleContainerHighFrequency.speed.speedValue/100.0;
 		vehdata.gnTimestamp = gn_timestamp;
 		vehdata.stationID = stationID; // It is very important to save also the stationID
 		vehdata.camTimestamp = static_cast<long>(decoded_cam->cam.generationDeltaTime);
-		vehdata.stationType = static_cast<ldmmap::e_StationTypeLDM>(decoded_cam->cam.camParameters.basicContainer.stationType);
+		//vehdata.stationType = static_cast<ldmmap::e_StationTypeLDM>(decoded_cam->cam.camParameters.basicContainer.stationType);
 
 		// Save also the source vehicle quadkey
 		if(msg.properties().size()>0) {
@@ -592,9 +616,20 @@ AMQPClient::on_message(proton::delivery &d, proton::message &msg) {
 		if(m_indicatorTrgMan_enabled == true && vehdata.exteriorLights.isAvailable()) {
 			// Trigger either if the cross-border trigger mode is enabled or if the triggering vehicle is located inside the internal area of this S-LDM instance
 			if(m_opts_ptr->cross_border_trigger==true || m_areaFilter.isInsideInternal(lat,lon)==true) {
-				if(m_indicatorTrgMan_ptr->checkAndTrigger(lat,lon,stationID,vehdata.exteriorLights.getData()) == true) {
-					std::cout << "[TRIGGER] Triggering condition detected!" << std::endl;
-				}
+			  // if the interop-hijack is enabled, check the stationType before triggering
+			    if(m_opts_ptr->interop_hijack_enable){
+				if(vehdata.stationType == ldmmap::StationType_LDM_passengerCar){
+				    if(m_indicatorTrgMan_ptr->checkAndTrigger(lat,lon,stationID,vehdata.exteriorLights.getData()) == true) {
+					    std::cout << "[TRIGGER] Triggering condition detected!" << std::endl;
+				      }
+				  }
+			      }
+			    else{
+				  // if the interop-hijack is NOT enabled, trigger no matter the vehicleType
+				  if(m_indicatorTrgMan_ptr->checkAndTrigger(lat,lon,stationID,vehdata.exteriorLights.getData()) == true) {
+					  std::cout << "[TRIGGER] Triggering condition detected!" << std::endl;
+				  }
+			      }
 			}
 		}
 
@@ -615,10 +650,10 @@ AMQPClient::on_message(proton::delivery &d, proton::message &msg) {
 		if(m_logfile_name!="") {
 			main_af=get_timestamp_ns();
 
-			logfprintf(m_logfile_file,std::string("FULL CAM PROCESSING (Client") + m_client_id + std::string(")"),"StationID=%u Coordinates=%.7lf:%.7lf Heading=%.1lf InstUpdatePeriod=%.3lf"
+			logfprintf(m_logfile_file,std::string("FULL CAM PROCESSING (Client") + m_client_id + std::string(")"),"StationID=%u StationTypeID=%d Coordinates=%.7lf:%.7lf Heading=%.1lf InstUpdatePeriod=%.3lf"
 				" CAMTimestamp=%ld GNTimestamp=%lu CAMTimestampDiff=%ld GNTimestampDiff=%ld"
 				" ProcTimeMilliseconds=%.6lf\n",
-				stationID,lat,lon,
+				stationID,static_cast<int>(vehdata.stationType),lat,lon,
 				vehdata.heading,
 				l_inst_period,
 				vehdata.camTimestamp,vehdata.gnTimestamp,get_timestamp_ms_cam()-vehdata.camTimestamp,get_timestamp_ms_gn()-vehdata.gnTimestamp,

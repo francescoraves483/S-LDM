@@ -60,6 +60,9 @@ class ManeuveringServiceRestClient {
 			double relative_dist_m,
 			ldmmap::e_StationTypeLDM stationType,
 			uint64_t diff_ref_tstamp,
+			uint64_t diff_rec_tstamp,
+			uint64_t cam_rec_tstamp,
+			uint64_t db_up_tstamp,
 			double heading
 			);
 

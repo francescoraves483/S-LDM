@@ -15,6 +15,9 @@ const VIS_HEADING_INVALID = 361;
 const CAR_ICO_IDX = 0;
 const CIRCLE_ICO_IDX = 1;
 const GREEN_CIRCLE_ICO_IDX = 2;
+//const BLUE_TRIANGLE_ICO_IDX = 3;
+const DETECTED_PEDESTRIAN_ICO_IDX = 4;
+const DETECTED_TRUCK_ICO_IDX = 5;
 
 // Start socket.io()
 const socket = io();
@@ -36,21 +39,47 @@ var icon_length_circle = 144;
 var icon_height_circle = 143;
 var icon_length_circle_green = 94;
 var icon_height_circle_green = 94;
+var icon_length_triangle_blue = 600;
+var icon_height_triangle_blue = 600;
 var icon_scale_factor = 11;
 var carIcon = L.icon({
-	iconUrl: './img/triangle.png',
+    iconUrl: './img/black_car.png',
 
 	iconSize:     [icon_length/icon_scale_factor, icon_height/icon_scale_factor], // size of the icon
 	iconAnchor:   [icon_length/(icon_scale_factor*2), icon_height/(icon_scale_factor*2)], // point of the icon which will correspond to marker's location
 	popupAnchor:  [0, 0] // point from which the popup should open relative to the iconAnchor
 });
 
+var detectedTruckIcon = L.icon({
+    iconUrl: './img/blue_truck.png',
+
+    iconSize:     [icon_length/icon_scale_factor, icon_height/7], // size of the icon
+    iconAnchor:   [icon_length/(icon_scale_factor*2), icon_height/(7*2)], // point of the icon which will correspond to marker's location
+    popupAnchor:  [0, 0] // point from which the popup should open relative to the iconAnchor
+});
+
+var detectedPedestrianIcon = L.icon({
+    iconUrl: './img/pedestrian.png',
+
+    iconSize:     [icon_length/icon_scale_factor, icon_height/icon_scale_factor], // size of the icon
+    iconAnchor:   [icon_length/(icon_scale_factor*2), icon_height/(icon_scale_factor*2)], // point of the icon which will correspond to marker's location
+    popupAnchor:  [0, 0] // point from which the popup should open relative to the iconAnchor
+});
+
+//var detectedCarIcon = L.icon({
+//    iconUrl: './img/blue_triangle.png',
+
+//    iconSize:     [icon_length_triangle_blue/(icon_scale_factor*3), icon_height_triangle_blue/(icon_scale_factor*2)], // size of the icon
+//    iconAnchor:   [icon_length_triangle_blue/(icon_scale_factor*6), icon_height_triangle_blue/(icon_scale_factor*4)], // point of the icon which will correspond to marker's location
+//    popupAnchor:  [0, 0] // point from which the popup should open relative to the iconAnchor
+//});
+
 var circleIcon = L.icon({
 	iconUrl: './img/circle.png',
 
 	iconSize:     [icon_length_circle/icon_scale_factor, icon_height_circle/icon_scale_factor], // size of the icon
 	iconAnchor:   [icon_length_circle/(icon_scale_factor*2), icon_height_circle/(icon_scale_factor*2)], // point of the icon which will correspond to marker's location
-	popupAnchor:  [0, 0] // point from which the popup should open relative to the iconAnchor
+    popupAnchor:  [0, 0] // point from which the popup shoPEDESTRIANuld open relative to the iconAnchor
 });
 
 var greenCircleIcon = L.icon({
@@ -174,14 +203,31 @@ function update_marker(mapref,id,lat,lon,stationtype,heading)
 					initial_icon = circleIcon;
 					initial_icon_idx = CIRCLE_ICO_IDX;
 				} else {
-					initial_icon = carIcon;
-					initial_icon_idx = CAR_ICO_IDX;
+                    if(stationtype === 110) {
+                        initial_icon = detectedPedestrianIcon;
+                        initial_icon_idx = DETECTED_PEDESTRIAN_ICO_IDX;
+                   } else {
+                        if (stationtype === 117) {
+                        initial_icon = detectedTruckIcon;
+                        initial_icon_idx = DETECTED_TRUCK_ICO_IDX;
+                    } else {
+                        initial_icon = carIcon;
+                        initial_icon_idx = CAR_ICO_IDX;
+                    }}
 				}
 			}
 
 			// Attempt to use an icon marker
 			newmarker = L.marker([lat,lon], {icon: initial_icon}).addTo(mapref);
-			newmarker.setRotationAngle(heading);
+
+            if(stationtype === 110){
+               newmarker.setRotationAngle(0);
+            }else {
+               newmarker.setRotationAngle(heading);
+            }
+
+
+            //newmarker.setRotationAngle(heading);
 
 			// Old circle marker (no more used)
 			// newmarker = L.circleMarker([lat,lon],{radius: 8, fillColor: "#c48612", color: "#000000", weight: 1, opacity: 1, fillOpacity: 0.8}).addTo(mapref);
@@ -197,7 +243,11 @@ function update_marker(mapref,id,lat,lon,stationtype,heading)
 		} else {
 			let marker = markers[id];
 			marker.setLatLng([lat,lon]);
-			marker.setRotationAngle(heading);
+            if(stationtype !== 110){
+               marker.setRotationAngle(heading);
+            }
+
+            //marker.setRotationAngle(heading);
 			// Update the popup content if the heading value becomes invalid/unavailable after being available
 			// or if the heading value if actually available (to specify the most up-to-date heading value)
 			if(heading >= VIS_HEADING_INVALID && markersicons[id] === CAR_ICO_IDX) {
@@ -211,11 +261,21 @@ function update_marker(mapref,id,lat,lon,stationtype,heading)
 				if(heading >= VIS_HEADING_INVALID && (markersicons[id] === CAR_ICO_IDX || markersicons[id] === GREEN_CIRCLE_ICO_IDX)) {
 					marker.setIcon(circleIcon);
 					markersicons[id] = CIRCLE_ICO_IDX;
-				// If the heading becomes available after being unavailable, change the icon of the vehicle to the "car" icon
-				} else if(heading < VIS_HEADING_INVALID && (markersicons[id] === CIRCLE_ICO_IDX || markersicons[id] === GREEN_CIRCLE_ICO_IDX)) {
-					marker.setIcon(carIcon);
-					markersicons[id] = CAR_ICO_IDX;
-				}
+                } else {
+                    // If the heading becomes available after being unavailable, change the icon of the vehicle to the "car" icon
+                    if(heading < VIS_HEADING_INVALID && (markersicons[id] === CIRCLE_ICO_IDX || markersicons[id] === GREEN_CIRCLE_ICO_IDX)) {
+                       if(stationtype === 110) {
+                           marker.setIcon(detectedPedestrianIcon);
+                           markersicons[id] = DETECTED_PEDESTRIAN_ICO_IDX;
+                        } else if(stationtype === 117) {
+                            marker.setIcon(detectedTruckIcon);
+                            markersicons[id] = DETECTED_TRUCK_ICO_IDX;
+                        } else {
+                           marker.setIcon(carIcon);
+                           markersicons[id] = CAR_ICO_IDX;
+                       }
+                    }
+                }
 			} else {
 				if(markersicons[id] === CAR_ICO_IDX || markersicons[id] === CIRCLE_ICO_IDX) {
 					marker.setIcon(greenCircleIcon);
