@@ -31,7 +31,7 @@ RUN apt-get update && \
     apt-get install -y build-essential cmake cmake-curses-gui uuid-dev libssl-dev libsasl2-2 libsasl2-dev libsasl2-modules wget python3 libcpprest libcpprest-dev nodejs libgeographic-dev
 
 # Download Qpid Proton
-RUN wget https://downloads.apache.org/qpid/proton/0.35.0/qpid-proton-0.35.0.tar.gz && \
+RUN wget https://archive.apache.org/dist/qpid/proton/0.35.0/qpid-proton-0.35.0.tar.gz && \
     tar zxvf qpid-proton-0.35.0.tar.gz
 
 # Install Qpid Proton
