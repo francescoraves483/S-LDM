@@ -14,6 +14,7 @@ ENV MS_REST_PORT 8000
 ENV VEHVIZ_UDP_ADDRESS 127.0.0.1
 ENV VEHVIZ_UDP_PORT 48110
 ENV VEHVIZ_WEB_PORT 8080
+ENV LOG_FILE stdout
 # To set a default plain authentication with username "user" and password "passwd", use: ENV SLDM_OTHER_OPTIONS "-u user -p passwd -I"
 
 # Set timezone
@@ -52,4 +53,4 @@ USER sldm
 WORKDIR /home/sldm/SLDM
 # EXPOSE 5671 5672 8161
 
-CMD ["/bin/sh", "-c", "./SLDM -A ${SLDM_INTERNAL_AREA} --ext-area-lat-factor ${SLDM_EXTERNAL_AREA_LAT_FACTOR} --ext-area-lon-factor ${SLDM_EXTERNAL_AREA_LON_FACTOR} --broker-url ${BROKER_URL} --broker-queue ${AMQP_TOPIC} --ms-rest-address ${MS_REST_ADDRESS} --ms-rest-port ${MS_REST_PORT} --vehviz-nodejs-address ${VEHVIZ_UDP_ADDRESS} --vehviz-nodejs-port ${VEHVIZ_UDP_PORT} --vehviz-web-port ${VEHVIZ_WEB_PORT} -L stdout ${SLDM_OTHER_OPTIONS}"]
+CMD ["/bin/sh", "-c", "./SLDM -A ${SLDM_INTERNAL_AREA} --ext-area-lat-factor ${SLDM_EXTERNAL_AREA_LAT_FACTOR} --ext-area-lon-factor ${SLDM_EXTERNAL_AREA_LON_FACTOR} --broker-url ${BROKER_URL} --broker-queue ${AMQP_TOPIC} --ms-rest-address ${MS_REST_ADDRESS} --ms-rest-port ${MS_REST_PORT} --vehviz-nodejs-address ${VEHVIZ_UDP_ADDRESS} --vehviz-nodejs-port ${VEHVIZ_UDP_PORT} --vehviz-web-port ${VEHVIZ_WEB_PORT} -L ${LOG_FILE} ${SLDM_OTHER_OPTIONS}"]

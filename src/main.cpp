@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <condition_variable>
 #include <thread>
+#include <time.h>
 
 #include "LDMmap.h"
 #include "vehicle-visualizer.h"
@@ -468,7 +469,15 @@ int main(int argc, char **argv) {
 		} else {
 			// Opening the output file in write + append mode just to be safe in case the user does not change the file name
 			// between different executions of the S-LDM
-			logfile_file=fopen(logfile_name.c_str(),"wa");
+			std::string logfile_name_date = logfile_name;
+			time_t rawtime;
+			struct tm * timeinfo;
+  			char buffer [25] = {NULL};
+  			time (&rawtime);	
+  			timeinfo = localtime (&rawtime);
+  			strftime (buffer,25,"-%Y%m%d-%H:%M:%S",timeinfo);
+			logfile_name_date += buffer;
+			logfile_file=fopen(logfile_name_date.c_str(),"wa");
 		}
 
 		bf=get_timestamp_ns();
