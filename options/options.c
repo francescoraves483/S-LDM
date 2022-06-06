@@ -315,12 +315,13 @@ static const struct option long_opts[]={
 #define OPT_enable_ext_lights_hijack \
 	"  --"LONGOPT_enable_ext_lights_hijack": when this options is set to 'true', the information for ext. lights is enabled\n" \
 	"\t  to be extracted from a highFreqContainer field inside CAMs (to solve version incompatibilities issues with the lowFreqContainer),\n" \
-	"\t  instead of using the correct container.\n"
+	"\t  instead of using the correct container. Normal users should never use this advanced option, unless they know very\n" \
+	"\t  well what they are doing."
 
 #define OPT_enable_interop_hijack \
 	"  --"LONGOPT_enable_interop_hijack": this is an advanced option not supposed to be enabled by the user. When this option is set\n" \
-	"\t  to true, the data about specific vehicles is sent via REST withstationType=100 for easy filtering. Furthermore, if set\n" \
-	"\t  to true, these specific vehicles won't trigger data transmissionvia REST when a turn indicator is on.\n"
+	"\t  to true, the data about specific vehicles is sent via REST with stationType=100 for easy filtering. Furthermore, if set\n" \
+	"\t  to true, these specific vehicles won't trigger data transmission via REST when a turn indicator is on.\n"
 
 static void print_long_info(char *argv0) {
 	fprintf(stdout,"\nUsage: %s [-A S-LDM coverage internal area] [options]\n"
