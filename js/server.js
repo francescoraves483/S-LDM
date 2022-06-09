@@ -12,19 +12,18 @@ const fs = require('fs');
 const path = require('path');
 
 var filepath = path.join(__dirname, 'mapbox_token');
-fs.readFile(filepath, 'utf8', function (err,data) {
-    if (err) {
-        console.log("Cannot read the mapbox_token file. Error: ",err);
-        process.exit(1);
-    }
-
-    if(data.length !== 0) {
-        let splitted_data = data.split(/\r\n|\r|\n/);
+try {
+	const filedata = fs.readFileSync(filepath, 'utf8');
+	if(filedata.length !== 0) {
+        let splitted_data = filedata.split(/\r\n|\r|\n/);
         mapbox_token = splitted_data[0];
 
         console.log("Vehicle Visualizer: specified a Mapbox token via the mapbox_token file.");
     }
-});
+} catch (err) {
+	console.log("Cannot read the mapbox_token file. Error: ",err);
+	process.exit(1);
+}
 
 // Read the server port as a command line option
 var server_argv = process.argv.slice(2);
