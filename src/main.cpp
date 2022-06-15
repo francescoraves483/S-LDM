@@ -19,8 +19,8 @@ extern "C" {
 
 #include "etsiDecoderFrontend.h"
 
-#define DB_CLEANER_INTERVAL_SECONDS 5
-#define DB_DELETE_OLDER_THAN_SECONDS 7 // This value should NEVER be set greater than (5-DB_CLEANER_INTERVAL_SECONDS/60) minutes or (300-DB_CLEANER_INTERVAL_SECONDS) seconds - doing so may break the database age check functionality!
+#define DB_CLEANER_INTERVAL_SECONDS 1
+#define DB_DELETE_OLDER_THAN_SECONDS 1 // This value should NEVER be set greater than (5-DB_CLEANER_INTERVAL_SECONDS/60) minutes or (300-DB_CLEANER_INTERVAL_SECONDS) seconds - doing so may break the database age check functionality!
 
 // Global atomic flag to terminate all the threads in case of errors
 std::atomic<bool> terminatorFlag;
@@ -443,6 +443,16 @@ int main(int argc, char **argv) {
 	std::string logfile_name="";
 	if(options_string_len(sldm_opts.logfile_name)>0) {
 		logfile_name=std::string(options_string_pop(sldm_opts.logfile_name));
+		if(logfile_name!="stdout") {
+			time_t rawtime;
+			struct tm * timeinfo;
+  			char buffer [25] = {NULL};
+  			time (&rawtime);	
+  			timeinfo = localtime (&rawtime);
+  			strftime (buffer,25,"-%Y%m%d-%H:%M:%S",timeinfo);
+			logfile_name += buffer;
+		}
+
 	}
 
 	// Create an indicatorTriggerManager object (the same object will be then accessed by all the AMQP clients, when using more than one client)
@@ -469,15 +479,7 @@ int main(int argc, char **argv) {
 		} else {
 			// Opening the output file in write + append mode just to be safe in case the user does not change the file name
 			// between different executions of the S-LDM
-			std::string logfile_name_date = logfile_name;
-			time_t rawtime;
-			struct tm * timeinfo;
-  			char buffer [25] = {NULL};
-  			time (&rawtime);	
-  			timeinfo = localtime (&rawtime);
-  			strftime (buffer,25,"-%Y%m%d-%H:%M:%S",timeinfo);
-			logfile_name_date += buffer;
-			logfile_file=fopen(logfile_name_date.c_str(),"wa");
+			logfile_file=fopen(logfile_name.c_str(),"wa");
 		}
 
 		bf=get_timestamp_ns();

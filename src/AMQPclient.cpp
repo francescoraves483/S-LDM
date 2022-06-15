@@ -4,6 +4,7 @@
 #include <fstream>
 #include <iomanip>
 #include <proton/reconnect_options.hpp>
+#include <time.h>
 
 extern "C" {
 	#include "CAM.h"
@@ -652,12 +653,12 @@ AMQPClient::on_message(proton::delivery &d, proton::message &msg) {
 
 			logfprintf(m_logfile_file,std::string("FULL CAM PROCESSING (Client") + m_client_id + std::string(")"),"StationID=%u StationTypeID=%d Coordinates=%.7lf:%.7lf Heading=%.1lf InstUpdatePeriod=%.3lf"
 				" CAMTimestamp=%ld GNTimestamp=%lu CAMTimestampDiff=%ld GNTimestampDiff=%ld"
-				" ProcTimeMilliseconds=%.6lf\n",
+				" ProcTimeMilliseconds=%.6lf Cardinality=%d\n",
 				stationID,static_cast<int>(vehdata.stationType),lat,lon,
 				vehdata.heading,
 				l_inst_period,
 				vehdata.camTimestamp,vehdata.gnTimestamp,get_timestamp_ms_cam()-vehdata.camTimestamp,get_timestamp_ms_gn()-vehdata.gnTimestamp,
-				(main_af-main_bf)/1000000.0);
+				(main_af-main_bf)/1000000.0,m_db_ptr->getCardinality ());
 			
 			// fprintf(m_logfile_file,"[LOG - FULL CAM PROCESSING] StationID=%u Coordinates=%.7lf:%.7lf InstUpdatePeriod=%.3lf"
 			// 	" CAMTimestamp=%ld GNTimestamp=%lu CAMTimestampDiff=%ld GNTimestampDiff=%ld"

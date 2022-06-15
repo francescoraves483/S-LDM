@@ -15,7 +15,7 @@ const VIS_HEADING_INVALID = 361;
 const CAR_ICO_IDX = 0;
 const CIRCLE_ICO_IDX = 1;
 const GREEN_CIRCLE_ICO_IDX = 2;
-//const BLUE_TRIANGLE_ICO_IDX = 3;
+const DETECTED_CAR_ICO_IDX = 3;
 const DETECTED_PEDESTRIAN_ICO_IDX = 4;
 const DETECTED_TRUCK_ICO_IDX = 5;
 
@@ -41,12 +41,16 @@ var icon_length_circle_green = 94;
 var icon_height_circle_green = 94;
 var icon_length_triangle_blue = 600;
 var icon_height_triangle_blue = 600;
-var icon_scale_factor = 11;
-var carIcon = L.icon({
-    iconUrl: './img/black_car.png',
 
-	iconSize:     [icon_length/icon_scale_factor, icon_height/icon_scale_factor], // size of the icon
-	iconAnchor:   [icon_length/(icon_scale_factor*2), icon_height/(icon_scale_factor*2)], // point of the icon which will correspond to marker's location
+var icon_length_car = 225;
+var icon_height_car = 300;
+
+var icon_scale_factor = 10;
+var carIcon = L.icon({
+    iconUrl: './img/black_car2.png',
+
+    iconSize:     [icon_length_car/icon_scale_factor, icon_height_car/icon_scale_factor], // size of the icon
+    iconAnchor:   [icon_length_car/(icon_scale_factor*2), icon_height_car/(icon_scale_factor*2)], // point of the icon which will correspond to marker's location
 	popupAnchor:  [0, 0] // point from which the popup should open relative to the iconAnchor
 });
 
@@ -66,13 +70,13 @@ var detectedPedestrianIcon = L.icon({
     popupAnchor:  [0, 0] // point from which the popup should open relative to the iconAnchor
 });
 
-//var detectedCarIcon = L.icon({
-//    iconUrl: './img/blue_triangle.png',
+var detectedCarIcon = L.icon({
+    iconUrl: './img/detected_car6.png',
 
-//    iconSize:     [icon_length_triangle_blue/(icon_scale_factor*3), icon_height_triangle_blue/(icon_scale_factor*2)], // size of the icon
-//    iconAnchor:   [icon_length_triangle_blue/(icon_scale_factor*6), icon_height_triangle_blue/(icon_scale_factor*4)], // point of the icon which will correspond to marker's location
-//    popupAnchor:  [0, 0] // point from which the popup should open relative to the iconAnchor
-//});
+    iconSize:     [icon_length_car/icon_scale_factor, icon_height_car/icon_scale_factor], // size of the icon
+    iconAnchor:   [icon_length_car/(icon_scale_factor*2), icon_height_car/(icon_scale_factor*2)], // point of the icon which will correspond to marker's location
+    popupAnchor:  [0, 0] // point from which the popup should open relative to the iconAnchor
+});
 
 var circleIcon = L.icon({
 	iconUrl: './img/circle.png',
@@ -195,8 +199,8 @@ function update_marker(mapref,id,lat,lon,stationtype,heading)
 			let initial_icon_idx;
 
 			if(stationtype === 0) {
-				initial_icon = greenCircleIcon;
-				initial_icon_idx = GREEN_CIRCLE_ICO_IDX;
+                initial_icon = detectedCarIcon;
+                initial_icon_idx = DETECTED_CAR_ICO_IDX;
 			} else {
 				// Set a circular icon when the heading is not available, otherwise use the regular carIcon (i.e. for the time being, a triangle)
 				if(heading >= VIS_HEADING_INVALID) {
