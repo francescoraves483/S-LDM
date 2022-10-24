@@ -10,6 +10,7 @@
 #include "QuadKeyTS.h"
 #include "AMQPclient.h"
 #include "utils.h"
+#include "timers.h"
 
 extern "C" {
 	#include "options.h"
@@ -126,41 +127,32 @@ void *DBcleaner_callback(void *arg) {
 	ldmmap::LDMMap *db_ptr = static_cast<ldmmap::LDMMap *>(arg);
 
 	// Create a new timer
-	struct pollfd pollfddata;
-	int clockFd;
-
+	Timer tmr(DB_CLEANER_INTERVAL_SECONDS*1e3);
 	std::cout << "[INFO] Database cleaner started. The DB will be garbage collected every " << DB_CLEANER_INTERVAL_SECONDS << " seconds." << std::endl;
 
-	if(timer_fd_create(pollfddata, clockFd, DB_CLEANER_INTERVAL_SECONDS*1e6)<0) {
-		std::cerr << "[ERROR] Fatal error! Cannot create timer for the DB cleaner thread!" << std::endl;
-		terminatorFlag = true;
-		pthread_exit(nullptr);
-	}
+        if(tmr.start()==false) {
+                std::cerr << "[ERROR] Fatal error! Cannot create timer for the DB cleaner thread!" << std::endl;
+                terminatorFlag = true;
+                pthread_exit(nullptr);
+        }
+
 
 	std::unique_lock<std::mutex> synclck(syncmtx);
 	synccv.wait(synclck);
 
 	POLL_DEFINE_JUNK_VARIABLE();
 
-	while(terminatorFlag == false) {
-		if(poll(&pollfddata,1,0)>0) {
-			POLL_CLEAR_EVENT(clockFd);
-
+	while(terminatorFlag == false && tmr.waitForExpiration()==true) {
 			// ---- These operations will be performed periodically ----
 
-			// db_ptr->deleteOlderThan(DB_DELETE_OLDER_THAN_SECONDS*1e3);
 			db_ptr->deleteOlderThanAndExecute(DB_DELETE_OLDER_THAN_SECONDS*1e3,clearVisualizerObject,static_cast<void *>(globVehVizPtr));
 
 			// --------
-
-		}
 	}
 
 	if(terminatorFlag == true) {
 		std::cerr << "[WARN] Database cleaner terminated due to error." << std::endl;
 	}
-
-	close(clockFd);
 
 	pthread_exit(nullptr);
 }
@@ -197,37 +189,29 @@ void *VehVizUpdater_callback(void *arg) {
 	synccv.notify_all();
 
 	// Create a new timer
-	struct pollfd pollfddata;
-	int clockFd;
-
+	Timer tmr(vizopts_ptr->opts_ptr->vehviz_update_interval_sec*1e3);
 	std::cout << "[INFO] Vehicle visualizer updater started. Updated every " << vizopts_ptr->opts_ptr->vehviz_update_interval_sec << " seconds." << std::endl;
 
-	if(timer_fd_create(pollfddata, clockFd, vizopts_ptr->opts_ptr->vehviz_update_interval_sec*1e6)<0) {
-		std::cerr << "[ERROR] Fatal error! Cannot create timer for the Vehicle Visualizer update thread!" << std::endl;
-		terminatorFlag = true;
-		pthread_exit(nullptr);
-	}
+        if(tmr.start()==false) {
+                std::cerr << "[ERROR] Fatal error! Cannot create timer for the Vehicle Visualizer update thread!" << std::endl;
+                terminatorFlag = true;
+                pthread_exit(nullptr);
+        }
 
-	POLL_DEFINE_JUNK_VARIABLE();
+        POLL_DEFINE_JUNK_VARIABLE();
 
-	while(terminatorFlag == false) {
-		if(poll(&pollfddata,1,0)>0) {
-			POLL_CLEAR_EVENT(clockFd);
+        while(terminatorFlag == false && tmr.waitForExpiration()==true) {
 
-			// ---- These operations will be performed periodically ----
+                        // ---- These operations will be performed periodically ----
 
-			db_ptr->executeOnAllContents(&updateVisualizer, static_cast<void *>(&vehicleVisObj));
+                        db_ptr->executeOnAllContents(&updateVisualizer, static_cast<void *>(&vehicleVisObj));
 
 			// --------
-
-		}
 	}
 
 	if(terminatorFlag == true) {
 		std::cerr << "[WARN] Vehicle visualizer updater terminated due to error." << std::endl;
 	}
-
-	close(clockFd);
 
 	pthread_exit(nullptr);
 }
