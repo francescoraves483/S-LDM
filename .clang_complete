@@ -8,3 +8,4 @@
 -Idecoder-module/asn1/include
 -Idecoder-module/include
 -Geographic
+-Ijson11

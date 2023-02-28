@@ -9,6 +9,7 @@
 #include "vehicle-visualizer.h"
 #include "QuadKeyTS.h"
 #include "AMQPclient.h"
+#include "JSONserver.h"
 #include "utils.h"
 #include "timers.h"
 
@@ -488,6 +489,18 @@ int main(int argc, char **argv) {
 
 	// Create the main AMQP client object
 	AMQPClient mainRecvClient(std::string(options_string_pop(sldm_opts.amqp_broker_one.broker_url)), std::string(options_string_pop(sldm_opts.amqp_broker_one.broker_topic)), sldm_opts.min_lat, sldm_opts.max_lat, sldm_opts.min_lon, sldm_opts.max_lon, &sldm_opts, db_ptr, logfile_name);
+
+	// Create the JSONserver object for the on-demand JSON-over-TCP interface
+	JSONserver jsonsrv(db_ptr);
+
+	// Start the on-demand JSON-over-TCP interface if enabled through the corresponding option
+	if(sldm_opts.od_json_interface_enabled==true) {
+		jsonsrv.setServerPort(sldm_opts.od_json_interface_port);
+		if(jsonsrv.startServer()!=true) {
+			fprintf(stderr,"Critical error: cannot start the JSON server for data retrieval from other services.\n");
+			exit(EXIT_FAILURE);
+		}
+	}
 
 	// Start the AMQP client event loop (additional clients, if requested by the user)
 	std::vector<std::thread> amqp_x_threads;

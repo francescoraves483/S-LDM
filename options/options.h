@@ -110,7 +110,7 @@ static inline bool fill_AMQPClient_options_array_##name(char * optarg, int num_c
 }
 
 // Insert here the version string
-#define VERSION_STR "S-LDM 1.1.10-beta" // 1.0.0 -> first (initial) cross-border version
+#define VERSION_STR "S-LDM 1.2.10-beta" // 1.0.0 -> first (initial) cross-border version
 
 #define DEFAULT_BROKER_URL "127.0.0.1:5672"
 #define DEFAULT_BROKER_QUEUE "topic://5gcarmen.examples"
@@ -136,10 +136,13 @@ static inline bool fill_AMQPClient_options_array_##name(char * optarg, int num_c
 // Default name for gn-timestamp property to look for when there is no GN+BTP in the message
 #define DEFAULT_GN_TIMESTAMP_PROPERTY "gn_ts"
 
+// Default port for the on-demand JSON-over-TCP interface
+#define DEFAULT_OD_JSON_OVER_TCP_INTERFACE_PORT 49000
+
 // Valid options
 // Any new option should be handled in the switch-case inside parse_options() and the corresponding char should be added to VALID_OPTS
 // If an option accepts an additional argument, it is followed by ':'
-#define VALID_OPTS "hvA:E:F:cU:Q:r:s:Z:z:w:L:u:p:RSIC:g"
+#define VALID_OPTS "hvA:E:F:cU:Q:r:s:Z:z:w:L:u:p:RSIC:gOo:"
 
 #define INIT_CODE 0xAE
 
@@ -197,6 +200,9 @@ typedef struct options {
 
 	bool ageCheck_enabled; // (-g option to set this to 'false') 'true' if an 'age check' on the received data should be performed before updating the database, 'false' otherwise. Default: 'true'.
 	bool quadkFilter_enabled; // 'true' if the QuadKey filter is enabled (messages are pre-filtered by the AMQP broker depending on the Quadkey property), 'false' otherwise (default: 'true' - it must be explicitly disabled, if needed)
+
+	bool od_json_interface_enabled; // Set to 'true' if the on-demand JSON-over-TCP interface is active on port od_json_interface_port, to 'false' otherwise
+	long od_json_interface_port; // On-demand JSON-over-TCP interface port
 } options_t;
 
 void options_initialize(struct options *options);

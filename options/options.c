@@ -31,6 +31,8 @@
 #define LONGOPT_L "log-file-name"
 #define LONGOPT_C "context-radius"
 #define LONGOPT_g "disable-age-check"
+#define LONGOPT_O "enable-on-demand-requests"
+#define LONGOPT_o "set-on-demand-json-port"
 
 // AMQP broker (main)
 #define LONGOPT_u "amqp-main-username"
@@ -113,6 +115,8 @@ static const struct option long_opts[]={
 	{LONGOPT_I,				no_argument,		NULL, 'I'},
 	{LONGOPT_C,				required_argument,	NULL, 'C'},
 	{LONGOPT_g,				no_argument,		NULL, 'g'},
+	{LONGOPT_O,				no_argument,		NULL, 'O'},
+	{LONGOPT_o,				required_argument,	NULL, 'o'},
 
 	{LONGOPT_vehviz_update_interval_sec,			required_argument,	NULL, LONGOPT_vehviz_update_interval_sec_val},
 	{LONGOPT_indicator_trgman_disable,				no_argument,		NULL, LONGOPT_indicator_trgman_disable_val},
@@ -191,13 +195,13 @@ static const struct option long_opts[]={
 
 #define OPT_Z_description \
 	LONGOPT_STR_CONSTRUCTOR(LONGOPT_Z) \
-	"  -Z: advanced option: set the IPv4 address for the UDP connection to the Vehicle Visualizer\n" \
+	"  -Z <address>: advanced option: set the IPv4 address for the UDP connection to the Vehicle Visualizer\n" \
 	"\t  Node.js server (excluding the port number).\n" \
 	"\t  This is the address without port number. Default: ("DEFAULT_VEHVIZ_NODEJS_UDP_ADDR").\n"
 
 #define OPT_z_description \
 	LONGOPT_STR_CONSTRUCTOR(LONGOPT_z) \
-	"  -z: advanced option: set the port number for the UDP connection to the Vehicle Visualizer\n" \
+	"  -z <port>: advanced option: set the port number for the UDP connection to the Vehicle Visualizer\n" \
 	"\t  Node.js server.\n" \
 	"\t  Default: ("STRINGIFY(DEFAULT_VEHVIZ_NODEJS_UDP_PORT)").\n"
 
@@ -246,6 +250,22 @@ static const struct option long_opts[]={
 #define OPT_I_description \
 	LONGOPT_STR_CONSTRUCTOR(LONGOPT_I) \
 	"  -I: enable the PLAIN authentication for the main AMQP client.\n"
+
+#define OPT_O_description \
+	LONGOPT_STR_CONSTRUCTOR(LONGOPT_O) \
+	"  -O: enable the on-demand JSON-over-TCP interface for data retrieval from the S-LDM database.\n" \
+	"\t  The S-LDM will expose a JSON-over-TCP server accepting TCP packets with a JSON containing the following fields:\n" \
+	"\t  - \"lat\": latitude of the center of the target area\n" \
+	"\t  - \"lon\": longitude of the center of the target area\n" \
+	"\t  - \"range\": radius in meters of the target area aroud the center\n" \
+	"\t  If the range is not specified, a default value of 300 m is automatically used.\n" \
+	"\t  Upon reception of a proper request (i.e., TCP packet with a proper JSON) from a client, the S-LDM will return the\n" \
+	"\t  list of vehicles and other objects stored in the database and located inside the target area.\n" \
+	"\t  The on-demand JSON-over-TCP interface is disabled by default.\n"
+
+#define OPT_o_description \
+	LONGOPT_STR_CONSTRUCTOR(LONGOPT_o) \
+	"  -o <port>: set the port for the on-demand JSON-over-TCP interface server. Default: ("STRINGIFY(DEFAULT_OD_JSON_OVER_TCP_INTERFACE_PORT)")\n"
 
 #define OPT_vehviz_update_interval_sec_description \
 	"  --"LONGOPT_vehviz_update_interval_sec" <interval in seconds>: advanced option: this option can be used to\n" \
@@ -348,6 +368,8 @@ static void print_long_info(char *argv0) {
 		OPT_R_description
 		OPT_S_description
 		OPT_I_description
+		OPT_O_description
+		OPT_o_description
 		OPT_vehviz_update_interval_sec_description
 		OPT_indicator_trgman_disable_description
 		OPT_disable_quadkey_filter_description
@@ -451,6 +473,9 @@ void options_initialize(struct options *options) {
 
 	options->ageCheck_enabled=true;
 	options->quadkFilter_enabled=true;
+
+	options->od_json_interface_enabled=false;
+	options->od_json_interface_port=DEFAULT_OD_JSON_OVER_TCP_INTERFACE_PORT;
 }
 
 unsigned int parse_options(int argc, char **argv, struct options *options) {
@@ -552,6 +577,24 @@ unsigned int parse_options(int argc, char **argv, struct options *options) {
 
 			case 'I':
 				options->amqp_broker_one.amqp_allow_insecure=true;
+				break;
+
+			case 'O':
+				options->od_json_interface_enabled=true;
+				break;
+
+			case 'o':
+				errno=0; // Setting errno to 0 as suggested in the strtol() man page
+				options->od_json_interface_port=strtol(optarg,&sPtr,10);
+
+				if(sPtr==optarg) {
+					fprintf(stderr,"Cannot find any digit in the specified value (-o/" LONGOPT_o ").\n");
+					print_short_info_err(options,argv[0]);
+				} else if(errno || options->od_json_interface_port<1 || options->od_json_interface_port>65535) {
+					// Only port numbers from 1 to 65535 are valid and can be accepted
+					fprintf(stderr,"Error in parsing the port number for the on-demand REST interface server.\n");
+					print_short_info_err(options,argv[0]);
+				}
 				break;
 
 			case 'r':
