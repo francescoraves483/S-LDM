@@ -13,8 +13,6 @@ The S-LDM is designed to be run on any Multi-Access Edge Computing (MEC) platfor
 It can then detect when certain "triggering conditions" occur, and use them as a trigger to start periodically providing the data, through a REST interface, to other MEC services. In particular, the S-LDM will act as REST client, and expect the other services to expose a REST server.
 Currently, the S-LDM considers as triggering condition **when a vehicle turns on either its right or its left turn indicator** (unless the check is disabled through dedicated options - i.e., `--indicator-trgman-disable` - or the related information is not encapsulated inside CAMs), as it is focused on an automated lane merge maneuver scenario. It will then start periodically sending towards a REST server the data of objects within a certain radius (default: 150 m) around the vehicle(s) which has turned on its indicator, until the server replies with a JSON with a field named `rsp_type` set to the string `STOP`. See also the sample Python 3 REST server located in `./tester/Python-REST-server` for more details on how to receive data from the S-LDM.
 
-A specific request-reply interface is currently under development, to enable on demand data retrieval from the S-LDM.
-
 The S-LDM can receive CAM messages through one or more **AMQP 1.0** brokers (we tested it on the [Apache ActiveMQ "Classic"](https://activemq.apache.org/components/classic/) broker) to which the S-LDM should be subscribed. The S-LDM can receive both *full ITS messages* (i.e., CAMs encapsulated inside the ETSI GeoNetworking and BTP, in turn encapsulated inside AMQP 1.0) and *pure CAMs* (i.e., CAMs directly encapsulated into AMQP 1.0, without any ETSI Transport and Networking layer). The detection of the message type is performed automatically by the S-LDM and it is thus transparent to the end-user. It is also planned to implement the support to the oncoming [Cooperative Perception Messages (CPMs)](https://www.etsi.org/deliver/etsi_tr/103500_103599/103562/02.01.01_60/tr_103562v020101p.pdf), which are currently being standardized by ETSI.
 
 In order to ensure compativility with the S-LDM, vehicles should send their messages (encapsulating the binary data of CAMs into the AMQP 1.0 protocol) to a well defined topic or queue of an active AMQP 1.0 broker. The S-LDM should be then set to subscribed to the proper topic to receive these messages.
@@ -109,6 +107,26 @@ By default, the S-LDM also launches a web-based user interface, on **port 8080**
 The behaviour of the web-based interface can be customized with `--vehviz-update-interval` (to change how often the GUI is updated) and `--vehviz-web-port` (to change the port at which the web GUI is available).
 
 
+# Retrieving data from the S-LDM on demand
+
+It is also possible to retrieve data from the S-LDM database on demand, thanks to a lightweight JSON-over-TCP interface, without the necessity of relying on the triggering mechanisms.
+This interface is enabled when the `--enable-on-demand-requests` option is specified.
+
+When enabled, the S-LDM will expose a TCP server, using the default 49000 port (unless a different port is specified with `--set-on-demand-json-port` or its short alternative `-o`).
+
+The server expects to receive requests in the form of TCP packets containing a JSON payload like the following:
+```
+{
+  "lat": <latitude of the center of the area>,
+  "lon": <longitude of the center of the area>,
+  "range": <radius in meters of the area of interest>
+}
+```
+The S-LDM, upon reception of the "JSON request", will send back a TCP packet with a JSON payload, which contains the list of vehicles and other objects located inside the requested area.
+
+A sample Python JSON-over-TCP client to retrieve data from the S-LDM is available inside `./tester/Sample-JSON-client`. This sample client can be used as a base to develop your own, more complex, service retrieving data on demand from the S-LDM.
+
+
 # Included directories
 
 The repository contains the following folders:
@@ -127,13 +145,33 @@ The repository contains the following folders:
 
 # Acknowledgments
 
-We currently have an accepted paper at VTC2022-Spring (19-22 June 2022), titled "*S-LDM: Server Local Dynamic Map for Vehicular Enhanced Collective Perception*".
+We currently have an accepted paper at IEEE VTC2022-Spring (19-22 June 2022), titled "*S-LDM: Server Local Dynamic Map for Vehicular Enhanced Collective Perception*".
 
-We are going to update this section as soon as the paper is released in the conference proceedings.
+To acknowledge us in your publications, please refer to the following citation:
+```
+F. Raviglione, C. M. R. Carletti, C. Casetti, F. Stoffella, G. M. Yilma and F. Visintainer, "S-LDM: Server Local Dynamic Map for Vehicular Enhanced Collective Perception," 2022 IEEE 95th Vehicular Technology Conference: (VTC2022-Spring), Helsinki, Finland, 2022, pp. 1-5, doi: 10.1109/VTC2022-Spring54318.2022.9860701.
+```
+
+BibTeX format:
+```
+@INPROCEEDINGS{S-LDM_paper_2022,
+  author={Raviglione, Francesco and Carletti, Carlos Mateo Risma and Casetti, Claudio and Stoffella, Filippo and Yilma, Girma M. and Visintainer, Filippo},
+  booktitle={2022 IEEE 95th Vehicular Technology Conference: (VTC2022-Spring)}, 
+  title={S-LDM: Server Local Dynamic Map for Vehicular Enhanced Collective Perception}, 
+  year={2022},
+  volume={},
+  number={},
+  pages={1-5},
+  doi={10.1109/VTC2022-Spring54318.2022.9860701}}
+```
+
 
 ![](./docs/pics/EU_flag.jpg)
 
 **Please have a look also at disclaimer.txt, as this work is included in the European Union Horizon 2020 project 5G-CARMEN co-funded by the EU.**
+
+
+This project includes the **json11** C++ library by Dropbox: [github.com/dropbox/json11](https://github.com/dropbox/json11)
 
 
 
